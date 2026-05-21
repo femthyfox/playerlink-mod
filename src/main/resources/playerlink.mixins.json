@@ -8,8 +8,8 @@
     "FrequencyMixin",
     "RedstoneLinkBlockEntityMixin"
   ],
-  "client": [],
-  "injectors": {
-    "defaultRequire": 1
-  }
+  "client": [
+    "RedstoneLinkRendererMixin"
+  ],
+  "injectors": { "defaultRequire": 1 }
 }

@@ -92,12 +92,12 @@ dependencies {
     // Create Mod Core
     implementation("com.simibubi.create:create-1.21.1:6.0.10-223")
 
-    // Ponder Component
-    implementation("net.createmod.ponder:Ponder-NeoForge-1.21.1:1.0.82")
+    // ==========================================
+    // GUARANTEED LOCAL FIX FOR PONDER
+    // ==========================================
+    implementation files("libs/Ponder-NeoForge-1.21.1-1.0.46.jar")
 
-    // ==========================================
-    // FIXED: Only load the API locally. Create handles the rest!
-    // ==========================================
+    // Flywheel Mod Backend (Already fixed locally)
     compileOnly files("libs/flywheel-neoforge-api-1.21.1-1.0.6.jar")
 
     // Registrate Component

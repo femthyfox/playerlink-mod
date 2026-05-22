@@ -17,7 +17,6 @@ public class PlayerLinkMod {
 
     public PlayerLinkMod(IEventBus modBus) {
         modBus.addListener(this::commonSetup);
-        modBus.addListener(PlayerLinkNetwork::register);
 
         // Server-side event bus listeners (commands, etc.)
         NeoForge.EVENT_BUS.register(com.playerlink.server.ServerEvents.class);

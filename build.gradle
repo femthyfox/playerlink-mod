@@ -93,7 +93,7 @@ dependencies {
     compileOnly("com.simibubi.create:create-1.21.1:6.0.0-6:slim") { transitive = false }
     runtimeOnly("com.simibubi.create:create-1.21.1:6.0.0-6") { transitive = false }
 
-    // Ponder Component (Fixed capitalization & official version)
+    // Ponder Component
     implementation("net.createmod.ponder:Ponder-NeoForge-1.21.1:1.0.82")
 
     // Flywheel Mod Backend

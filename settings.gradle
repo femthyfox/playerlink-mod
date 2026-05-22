@@ -11,16 +11,13 @@ plugins {
 }
 
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+    // Forces everything through this central channel safely
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         mavenCentral()
         
-        // FIXED: Explicitly appended /releases to the URL so Gradle finds the NeoForge 21.1.95 binaries
+        // NeoForge Core Repositories
         maven { url = 'https://maven.neoforged.net/releases' }
         
-        maven { url = "https://maven.createmod.net/" } // Serves Create, Flywheel, & Ponder
-        maven { url = "https://ithundxr.dev" } // Serves Registrate
-    }
-}
-
-rootProject.name = 'playerlink'
+        // Mojang Mirror (Fixes the missing minecraft-dependencies error)
+        maven { url = '

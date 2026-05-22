@@ -2,7 +2,7 @@ package com.playerlink.mixin;
 
 import com.playerlink.api.IFrequencyOwner;
 import com.playerlink.api.IOwnedLink;
-import com.simibubi.create.foundation.utility.Couple;
+import net.createmod.catnip.data.Couple;
 import com.simibubi.create.content.redstone.link.RedstoneLinkNetworkHandler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;

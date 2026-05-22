@@ -40,6 +40,11 @@ maven {
         url = 'https://modmaven.dev/'
     }
     mavenCentral()
+ 
+maven {
+        name = "CreateMod Maven"
+        url = "https://maven.createmod.net/"
+    }
 }
 
 neoForge {

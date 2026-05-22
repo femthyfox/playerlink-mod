@@ -10,13 +10,16 @@ plugins {
     id 'org.gradle.toolchains.foojay-resolver-convention' version '0.8.0'
 }
 
-// Fixed: Switched to PREFER_SETTINGS to force Gradle to read these global paths
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
     repositories {
         mavenCentral()
-        maven { url = "https://maven.createmod.net/" } // Serves Create, Flywheel, & Ponder
-        maven { url = "https://ithundxr.dev" } // Serves Registrate
+        
+        // ADD THIS EXACT LINE HERE: Allows Gradle to find NeoForge 21.1.95
+        maven { url = 'https://neoforged.net' }
+        
+        maven { url = "https://maven.createmod.net/" } // For Create, Flywheel, & Ponder
+        maven { url = "https://ithundxr.dev" } // For Registrate
     }
 }
 

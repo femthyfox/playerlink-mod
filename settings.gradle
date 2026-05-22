@@ -8,14 +8,16 @@ pluginManagement {
 
 plugins {
     id "org.gradle.toolchains.foojay-resolver-convention" version "0.8.0"
+    
+    // ADD THIS LINE: Tells NeoForge to safely map its internal Mojang repositories centrally
+    id "net.neoforged.moddev.repositories" version "2.0.71" 
 }
 
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    // FIXED: Removed FAIL_ON_PROJECT_REPOS to stop the NeoForge plugin from crashing
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
     repositories {
         mavenCentral()
-        
-        // Fixed: Switched all single quotes to clean double quotes
         maven { url = "https://neoforged.net" }
         maven { url = "https://minecraft.net" }
         maven { url = "https://createmod.net" }

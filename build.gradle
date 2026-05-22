@@ -89,17 +89,18 @@ neoForge {
 }
 
 dependencies {
-    // Create mod (compile against slim, run with full)
+    // Create Mod Core
     compileOnly("com.simibubi.create:create-1.21.1:6.0.0-6:slim") { transitive = false }
     runtimeOnly("com.simibubi.create:create-1.21.1:6.0.0-6") { transitive = false }
 
-    implementation("net.createmod.ponder:Ponder-NeoForge-1.21.1:1.0.46")
+    // Ponder Component (Fixed capitalization & official version)
+    implementation("net.createmod.ponder:Ponder-NeoForge-1.21.1:1.0.82")
 
-    // Flywheel (Create dependency)
-    implementation("dev.engine_room.flywheel:flywheel-neoforge-api-1.21.1:1.0.6") { transitive = false }
+    // Flywheel Mod Backend
+    compileOnly("dev.engine_room.flywheel:flywheel-neoforge-api-1.21.1:1.0.6") { transitive = false }
     runtimeOnly("dev.engine_room.flywheel:flywheel-neoforge-1.21.1:1.0.6") { transitive = false }
 
-    // Registrate (Create dependency)
+    // Registrate Component
     compileOnly "com.tterrag.registrate:Registrate:${registrate_version}"
     runtimeOnly "com.tterrag.registrate:Registrate:${registrate_version}"
 }

@@ -10,12 +10,13 @@ plugins {
     id 'org.gradle.toolchains.foojay-resolver-convention' version '0.8.0'
 }
 
+// Fixed: Switched to PREFER_SETTINGS to force Gradle to read these global paths
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
     repositories {
         mavenCentral()
-        maven { url = "https://maven.createmod.net" } // For Flywheel & Create
-        maven { url = "https://maven.ithundxr.dev/mirror" } // Updated to official Registrate Mirror
+        maven { url = "https://maven.createmod.net/" } // Serves Create, Flywheel, & Ponder
+        maven { url = "https://ithundxr.dev" } // Serves Registrate
     }
 }
 

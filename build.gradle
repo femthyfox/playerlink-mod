@@ -44,9 +44,12 @@ maven {
 maven {
         name = "CreateMod Maven"
         url = "https://maven.createmod.net/"
+
+maven { 
+        url = "https://maven.ithundxr.dev/snapshots" 
     }
 }
-
+    
 neoForge {
     version = neo_version
 
@@ -88,6 +91,8 @@ dependencies {
     // Create mod (compile against slim, run with full)
     compileOnly("com.simibubi.create:create-1.21.1:6.0.0-6:slim") { transitive = false }
     runtimeOnly("com.simibubi.create:create-1.21.1:6.0.0-6") { transitive = false }
+
+    implementation("net.createmod.ponder:ponder-neoforge:1.21.1-0.1.0-edit-this-version")
 
     // Flywheel (Create dependency)
     compileOnly("dev.engine_room.flywheel:flywheel-neoforge-api-1.21.1:1.0.6") { transitive = false }

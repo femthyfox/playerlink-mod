@@ -44,6 +44,7 @@ maven {
 maven {
         name = "CreateMod Maven"
         url = "https://maven.createmod.net/"
+    }
 
 maven { 
         url = "https://maven.ithundxr.dev/snapshots" 

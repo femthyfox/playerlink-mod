@@ -2,22 +2,25 @@ pluginManagement {
     repositories {
         mavenLocal()
         gradlePluginPortal()
-        maven { url = 'https://maven.neoforged.net/releases' }
+        maven { url = "https://neoforged.net" }
     }
 }
 
 plugins {
-    id 'org.gradle.toolchains.foojay-resolver-convention' version '0.8.0'
+    id "org.gradle.toolchains.foojay-resolver-convention" version "0.8.0"
 }
 
 dependencyResolutionManagement {
-    // Forces everything through this central channel safely
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         mavenCentral()
         
-        // NeoForge Core Repositories
-        maven { url = 'https://maven.neoforged.net/releases' }
-        
-        // Mojang Mirror (Fixes the missing minecraft-dependencies error)
-        maven { url = '
+        // Fixed: Switched all single quotes to clean double quotes
+        maven { url = "https://neoforged.net" }
+        maven { url = "https://minecraft.net" }
+        maven { url = "https://createmod.net" }
+        maven { url = "https://ithundxr.dev" }
+    }
+}
+
+rootProject.name = "playerlink"

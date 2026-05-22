@@ -93,7 +93,7 @@ dependencies {
     compileOnly("com.simibubi.create:create-1.21.1:6.0.0-6:slim") { transitive = false }
     runtimeOnly("com.simibubi.create:create-1.21.1:6.0.0-6") { transitive = false }
 
-    implementation("net.createmod.ponder:ponder-neoforge:1.21.1-0.1.0-edit-this-version")
+    implementation("net.createmod.ponder:ponder-neoforge:1.21.1-0.1.0-beta-5")
 
     // Flywheel (Create dependency)
     implementation("dev.engine_room.flywheel:flywheel-neoforge-api-1.21.1:1.0.6") { transitive = false }

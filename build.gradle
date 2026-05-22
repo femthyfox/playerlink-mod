@@ -96,7 +96,7 @@ dependencies {
     implementation("net.createmod.ponder:ponder-neoforge:1.21.1-0.1.0-edit-this-version")
 
     // Flywheel (Create dependency)
-    compileOnly("dev.engine_room.flywheel:flywheel-neoforge-api-1.21.1:1.0.6") { transitive = false }
+    implementation("dev.engine_room.flywheel:flywheel-neoforge-api-1.21.1:1.0.6") { transitive = false }
     runtimeOnly("dev.engine_room.flywheel:flywheel-neoforge-1.21.1:1.0.6") { transitive = false }
 
     // Registrate (Create dependency)

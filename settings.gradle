@@ -2,12 +2,22 @@ pluginManagement {
     repositories {
         mavenLocal()
         gradlePluginPortal()
-        maven { url = 'https://maven.neoforged.net/releases' }
+        maven { url = 'https://neoforged.net' }
     }
 }
 
 plugins {
     id 'org.gradle.toolchains.foojay-resolver-convention' version '0.8.0'
+}
+
+// THIS NEW SECTION TELLS GRADLE WHERE TO LOOK FOR FLYWHEEL & REGISTRATE
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.PRESERVE_STREAMS)
+    repositories {
+        mavenCentral()
+        maven { url = "https://maven.createmod.net" } // For Flywheel
+        maven { url = "https://maven.ithundxr.dev/snapshots" } // For Registrate
+    }
 }
 
 rootProject.name = 'playerlink'

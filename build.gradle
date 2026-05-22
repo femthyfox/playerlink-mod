@@ -81,12 +81,12 @@ neoForge {
 
 dependencies {
     // Create mod (compile against slim, run with full)
-    compileOnly "com.simibubi.create:create-1.21.1:6.0.4:slim"
-    runtimeOnly "com.simibubi.create:create-1.21.1:6.0.4"
+    compileOnly group: 'com.simibubi.create', name: 'create-1.21.1', version: '6.0.0.6', classifier: 'slim'
+    runtimeOnly group: 'com.simibubi.create', name: 'create-1.21.1', version: '6.0.0.6'
 
     // Flywheel (Create dependency)
-    compileOnly "dev.engine_room.flywheel:flywheel-neoforge-1.21.1:1.0.1"
-    runtimeOnly "dev.engine_room.flywheel:flywheel-neoforge-1.21.1:1.0.1"
+    compileOnly group: 'dev.engine_room.flywheel', name: 'flywheel-neoforge-1.21.1', version: '1.0.1-11'
+    runtimeOnly group: 'dev.engine_room.flywheel', name: 'flywheel-neoforge-1.21.1', version: '1.0.1-11'
 
     // Registrate (Create dependency)
     compileOnly "com.tterrag.registrate:Registrate:${registrate_version}"

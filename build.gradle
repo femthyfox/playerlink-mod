@@ -85,8 +85,8 @@ dependencies {
     runtimeOnly("com.simibubi.create:create-1.21.1:6.0.0-6") { transitive = false }
 
     // Flywheel (Create dependency)
-    compileOnly("dev.engine_room.flywheel:flywheel-neoforge-api-1.21.1:1.0.1-11") { transitive = false }
-     runtimeOnly("dev.engine_room.flywheel:flywheel-neoforge-api-1.21.1:1.0.1-11") { transitive = false }
+    compileOnly("dev.engine_room.flywheel:flywheel-neoforge-api-1.21.1:1.0.6") { transitive = false }
+    runtimeOnly("dev.engine_room.flywheel:flywheel-neoforge-1.21.1:1.0.6") { transitive = false }
 
     // Registrate (Create dependency)
     compileOnly "com.tterrag.registrate:Registrate:${registrate_version}"

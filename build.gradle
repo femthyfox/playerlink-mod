@@ -89,15 +89,16 @@ neoForge {
 }
 
 dependencies {
-    // Standardized Create Mod NeoForge Dependency Setup
+    // Create Mod Core
     implementation("com.simibubi.create:create-1.21.1:6.0.10-223")
 
     // Ponder Component
     implementation("net.createmod.ponder:Ponder-NeoForge-1.21.1:1.0.82")
 
-    // Flywheel Mod Backend
-    compileOnly("dev.engine_room.flywheel:flywheel-neoforge-api-1.21.1:1.0.6")
-    runtimeOnly("dev.engine_room.flywheel:flywheel-neoforge-1.21.1:1.0.6")
+    // ==========================================
+    // FIXED: Only load the API locally. Create handles the rest!
+    // ==========================================
+    compileOnly files("libs/flywheel-neoforge-api-1.21.1-1.0.6.jar")
 
     // Registrate Component
     implementation("com.tterrag.registrate:Registrate:${registrate_version}")

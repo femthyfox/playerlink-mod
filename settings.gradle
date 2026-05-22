@@ -10,13 +10,13 @@ plugins {
     id 'org.gradle.toolchains.foojay-resolver-convention' version '0.8.0'
 }
 
-// THIS NEW SECTION TELLS GRADLE WHERE TO LOOK FOR FLYWHEEL & REGISTRATE
+// Fixed the typo below: Changed PRESERVE_STREAMS to PREFER_PROJECT
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.PRESERVE_STREAMS)
+    repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
     repositories {
         mavenCentral()
-        maven { url = "https://maven.createmod.net" } // For Flywheel
-        maven { url = "https://maven.ithundxr.dev/snapshots" } // For Registrate
+        maven { url = "https://createmod.net" }
+        maven { url = "https://ithundxr.dev" }
     }
 }
 

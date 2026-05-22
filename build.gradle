@@ -89,9 +89,9 @@ neoForge {
 }
 
 dependencies {
-    // Create Mod Core
-    compileOnly("com.simibubi.create:create-1.21.1:0.6.1.a:slim") { transitive = false }
-    runtimeOnly("com.simibubi.create:create-1.21.1:0.6.1.a") { transitive = false }
+    // Create Mod Core (Changed back to the real version now that maven paths are open)
+    compileOnly("com.simibubi.create:create-1.21.1:6.0.0-6:slim") { transitive = false }
+    runtimeOnly("com.simibubi.create:create-1.21.1:6.0.0-6") { transitive = false }
 
     // Ponder Component
     implementation("net.createmod.ponder:Ponder-NeoForge-1.21.1:1.0.82")

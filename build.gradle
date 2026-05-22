@@ -89,15 +89,15 @@ neoForge {
 }
 
 dependencies {
-    // Corrected Create Mod Core configuration using properties variables
-    implementation("com.simibubi.create:create-${minecraft_version}:${create_version}")
+    // Standardized Create Mod NeoForge Dependency Setup
+    implementation("com.simibubi.create:create-1.21.1:6.0.10-223")
 
-    // Ponder Component (Requires official capitalization)
-    implementation("net.createmod.ponder:Ponder-NeoForge-${minecraft_version}:${ponder_version}")
+    // Ponder Component
+    implementation("net.createmod.ponder:Ponder-NeoForge-1.21.1:1.0.82")
 
     // Flywheel Mod Backend
-    compileOnly("dev.engine_room.flywheel:flywheel-neoforge-api-${minecraft_version}:${flywheel_version}")
-    runtimeOnly("dev.engine_room.flywheel:flywheel-neoforge-${minecraft_version}:${flywheel_version}")
+    compileOnly("dev.engine_room.flywheel:flywheel-neoforge-api-1.21.1:1.0.6")
+    runtimeOnly("dev.engine_room.flywheel:flywheel-neoforge-1.21.1:1.0.6")
 
     // Registrate Component
     implementation("com.tterrag.registrate:Registrate:${registrate_version}")

@@ -10,13 +10,12 @@ plugins {
     id 'org.gradle.toolchains.foojay-resolver-convention' version '0.8.0'
 }
 
-// Fixed the typo below: Changed PRESERVE_STREAMS to PREFER_PROJECT
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
     repositories {
         mavenCentral()
-        maven { url = "https://createmod.net" }
-        maven { url = "https://ithundxr.dev" }
+        maven { url = "https://maven.createmod.net" } // For Flywheel & Create
+        maven { url = "https://maven.ithundxr.dev/mirror" } // Updated to official Registrate Mirror
     }
 }
 

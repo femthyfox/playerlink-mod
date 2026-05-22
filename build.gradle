@@ -15,6 +15,11 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 repositories {
     mavenLocal()
+maven {
+    // create mod link
+        name = "Create Mod Maven"
+        url = "https://maven.createmod.net/"
+    }
     // Create
     maven {
         name = 'tterrag maven'

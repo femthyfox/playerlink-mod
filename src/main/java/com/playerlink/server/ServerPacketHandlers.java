@@ -16,8 +16,10 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 public final class ServerPacketHandlers {
@@ -36,16 +38,23 @@ public final class ServerPacketHandlers {
 
             UUID currentOwner = ((IOwnedLink) be).playerlink$getOwner();
 
-            UserWhiteList whitelist = server.getPlayerList().getWhiteList();
             List<WhitelistResponsePacket.Entry> entries = new ArrayList<>();
+            Set<UUID> seen = new HashSet<>();
 
+            UserWhiteList whitelist = server.getPlayerList().getWhiteList();
             for (String name : whitelist.getUserList()) {
                 Optional<GameProfile> profileOpt = server.getProfileCache() == null
                         ? Optional.empty()
                         : server.getProfileCache().get(name);
-                profileOpt.ifPresent(p -> entries.add(
-                        new WhitelistResponsePacket.Entry(p.getId(), p.getName())
-                ));
+                if (profileOpt.isPresent() && seen.add(profileOpt.get().getId())) {
+                    entries.add(new WhitelistResponsePacket.Entry(profileOpt.get().getId(), profileOpt.get().getName()));
+                }
+            }
+
+            for (ServerPlayer online : server.getPlayerList().getPlayers()) {
+                if (seen.add(online.getUUID())) {
+                    entries.add(new WhitelistResponsePacket.Entry(online.getUUID(), online.getGameProfile().getName()));
+                }
             }
 
             PacketDistributor.sendToPlayer(sp, new WhitelistResponsePacket(
@@ -70,17 +79,22 @@ public final class ServerPacketHandlers {
             Optional<UUID> newOwner = pkt.newOwner();
             if (newOwner.isPresent()) {
                 UUID candidate = newOwner.get();
-                UserWhiteList whitelist = server.getPlayerList().getWhiteList();
                 boolean ok = false;
+
+                UserWhiteList whitelist = server.getPlayerList().getWhiteList();
                 for (String name : whitelist.getUserList()) {
                     Optional<GameProfile> p = server.getProfileCache() == null
                             ? Optional.empty()
                             : server.getProfileCache().get(name);
-                    if (p.isPresent() && p.get().getId().equals(candidate)) {
-                        ok = true;
-                        break;
+                    if (p.isPresent() && p.get().getId().equals(candidate)) { ok = true; break; }
+                }
+
+                if (!ok) {
+                    for (ServerPlayer online : server.getPlayerList().getPlayers()) {
+                        if (online.getUUID().equals(candidate)) { ok = true; break; }
                     }
                 }
+
                 if (!ok) return;
                 ((IOwnedLink) link).playerlink$setOwner(candidate);
             } else {

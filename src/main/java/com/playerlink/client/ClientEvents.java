@@ -8,7 +8,6 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -48,16 +47,9 @@ public final class ClientEvents {
 
     private static void tryOpenOwnerGui(Minecraft mc, LocalPlayer player, ClientLevel level) {
         HitResult hit = mc.hitResult;
-        if (!(hit instanceof BlockHitResult bhr) || hit.getType() != HitResult.Type.BLOCK) {
-            player.displayClientMessage(Component.translatable("playerlink.message.no_link"), true);
-            return;
-        }
+        if (!(hit instanceof BlockHitResult bhr) || hit.getType() != HitResult.Type.BLOCK) return;
         BlockEntity be = level.getBlockEntity(bhr.getBlockPos());
-        if (!(be instanceof RedstoneLinkBlockEntity)) {
-            player.displayClientMessage(Component.translatable("playerlink.message.no_link"), true);
-            return;
-        }
-        // Ask server for whitelist + current owner; server replies with WhitelistResponsePacket
+        if (!(be instanceof RedstoneLinkBlockEntity)) return;
         PacketDistributor.sendToServer(new RequestWhitelistPacket(bhr.getBlockPos()));
     }
 }

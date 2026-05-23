@@ -17,8 +17,6 @@ import java.util.UUID;
 @Mixin(value = LinkBehaviour.class, remap = false)
 public abstract class LinkBehaviourMixin extends BlockEntityBehaviour {
 
-    // This constructor is never actually called - it just satisfies the Java compiler
-    // because BlockEntityBehaviour has no no-arg constructor.
     protected LinkBehaviourMixin(SmartBlockEntity be) {
         super(be);
     }
@@ -28,14 +26,23 @@ public abstract class LinkBehaviourMixin extends BlockEntityBehaviour {
         Couple<Frequency> key = cir.getReturnValue();
         if (key == null) return;
 
-        // 'blockEntity' is the inherited field from BlockEntityBehaviour
-        if (!(this.blockEntity instanceof IOwnedLink iol)) return;
-        UUID owner = iol.playerlink$getOwner();
-        if (owner == null) return;
+        // Get the BE's current owner (may be null if owner was cleared)
+        UUID owner = null;
+        if (this.blockEntity instanceof IOwnedLink iol) {
+            owner = iol.playerlink$getOwner();
+        }
 
         Frequency first = key.getFirst();
         Frequency second = key.getSecond();
-        if (first instanceof IFrequencyOwner fo) fo.playerlink$setOwner(owner);
-        if (second instanceof IFrequencyOwner fo) fo.playerlink$setOwner(owner);
+
+        // ALWAYS overwrite the stamp — including with null when no owner.
+        // This clears any leftover stamp from a previous owner.
+        // Skip Frequency.EMPTY (shared singleton across all links — must stay untagged).
+        if (first instanceof IFrequencyOwner fo && first != Frequency.EMPTY) {
+            fo.playerlink$setOwner(owner);
+        }
+        if (second instanceof IFrequencyOwner fo && second != Frequency.EMPTY) {
+            fo.playerlink$setOwner(owner);
+        }
     }
 }

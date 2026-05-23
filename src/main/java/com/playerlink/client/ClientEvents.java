@@ -1,4 +1,4 @@
-
+package com.playerlink.client;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.playerlink.PlayerLinkMod;
 import com.playerlink.network.RequestWhitelistPacket;

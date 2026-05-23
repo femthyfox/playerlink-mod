@@ -4,14 +4,12 @@ import com.playerlink.api.IOwnedLink;
 import com.simibubi.create.Create;
 import com.simibubi.create.content.redstone.link.LinkBehaviour;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -23,11 +21,6 @@ import java.util.UUID;
 @Mixin(value = com.simibubi.create.content.redstone.link.RedstoneLinkBlockEntity.class, remap = false)
 public abstract class RedstoneLinkBlockEntityMixin implements IOwnedLink {
 
-    @Shadow(remap = false) public Level level;
-    @Shadow public abstract void setChanged();
-    @Shadow public abstract BlockPos getBlockPos();
-    @Shadow public abstract BlockState getBlockState();
-
     @Unique
     private static final String PLAYERLINK_OWNER_KEY = "PlayerLinkOwner";
 
@@ -36,8 +29,13 @@ public abstract class RedstoneLinkBlockEntityMixin implements IOwnedLink {
     private UUID playerlink$ownerUuid = null;
 
     @Unique
+    private BlockEntity playerlink$self() {
+        return (BlockEntity) (Object) this;
+    }
+
+    @Unique
     private LinkBehaviour playerlink$findLink() {
-        BlockEntity self = (BlockEntity) (Object) this;
+        BlockEntity self = playerlink$self();
         if (!(self instanceof SmartBlockEntity sbe)) return null;
         return sbe.getBehaviour(LinkBehaviour.TYPE);
     }
@@ -50,25 +48,28 @@ public abstract class RedstoneLinkBlockEntityMixin implements IOwnedLink {
 
     @Override
     public void playerlink$setOwner(@Nullable UUID owner) {
-        if (this.level != null && !this.level.isClientSide) {
+        BlockEntity self = playerlink$self();
+        Level level = self.getLevel();
+
+        if (level != null && !level.isClientSide) {
             LinkBehaviour link = playerlink$findLink();
 
             if (link != null) {
-                Create.REDSTONE_LINK_NETWORK_HANDLER.removeFromNetwork(this.level, link);
+                Create.REDSTONE_LINK_NETWORK_HANDLER.removeFromNetwork(level, link);
             }
 
             this.playerlink$ownerUuid = owner;
 
             if (link != null) {
-                Create.REDSTONE_LINK_NETWORK_HANDLER.addToNetwork(this.level, link);
+                Create.REDSTONE_LINK_NETWORK_HANDLER.addToNetwork(level, link);
             }
 
-            setChanged();
-            BlockState st = getBlockState();
-            this.level.sendBlockUpdated(getBlockPos(), st, st, 3);
+            self.setChanged();
+            BlockState st = self.getBlockState();
+            level.sendBlockUpdated(self.getBlockPos(), st, st, 3);
         } else {
             this.playerlink$ownerUuid = owner;
-            setChanged();
+            self.setChanged();
         }
     }
 

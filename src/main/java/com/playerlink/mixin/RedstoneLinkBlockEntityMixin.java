@@ -20,24 +20,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import javax.annotation.Nullable;
 import java.util.UUID;
 
-/**
- * Attaches an owner UUID to each RedstoneLinkBlockEntity, persists it
- * via NBT, and propagates it onto the Frequency objects returned by
- * {@code getNetworkKey()} so the network handler routes signals
- * scoped per-player.
- *
- * Target: com.simibubi.create.content.redstone.link.RedstoneLinkBlockEntity
- */
 @Mixin(value = com.simibubi.create.content.redstone.link.RedstoneLinkBlockEntity.class, remap = false)
 public abstract class RedstoneLinkBlockEntityMixin implements IOwnedLink {
 
-    // --- shadowed BlockEntity members (provided by the target / its superclass) ---
     @Shadow(remap = false) public Level level;
-    @Shadow public abstract void setChanged();
-    @Shadow public abstract BlockPos getBlockPos();
-    @Shadow public abstract BlockState getBlockState();
+    @Shadow(remap = false) public abstract void setChanged();
+    @Shadow(remap = false) public abstract BlockPos getBlockPos();
+    @Shadow(remap = false) public abstract BlockState getBlockState();
 
-    // --- our additions ---
     @Unique
     private static final String PLAYERLINK_OWNER_KEY = "PlayerLinkOwner";
 
@@ -61,14 +51,9 @@ public abstract class RedstoneLinkBlockEntityMixin implements IOwnedLink {
         }
     }
 
-    /**
-     * Inject into Create's BE write() to persist the owner UUID.
-     * Signature in Create 6.0 (1.21.1):
-     *   protected void write(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket)
-     */
     @Inject(method = "write", at = @At("TAIL"), remap = false)
     private void playerlink$write(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket, CallbackInfo ci) {
-       if (playerlink$ownerUuid != null) {
+        if (playerlink$ownerUuid != null) {
             compound.putUUID(PLAYERLINK_OWNER_KEY, playerlink$ownerUuid);
         }
     }
@@ -77,23 +62,16 @@ public abstract class RedstoneLinkBlockEntityMixin implements IOwnedLink {
     private void playerlink$read(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket, CallbackInfo ci) {
         if (compound.hasUUID(PLAYERLINK_OWNER_KEY)) {
             this.playerlink$ownerUuid = compound.getUUID(PLAYERLINK_OWNER_KEY);
-       } else {
-           this.playerlink$ownerUuid = null;
+        } else {
+            this.playerlink$ownerUuid = null;
         }
     }
 
-    /**
-     * After Create constructs the {@code Couple<Frequency>} used as the
-     * network routing key, tag both Frequencies with our owner UUID.
-     *
-     * Method name in Create 6.0: {@code getNetworkKey()}.
-     */
     @Inject(method = "getNetworkKey", at = @At("RETURN"), remap = false)
     private void playerlink$tagFrequencies(CallbackInfoReturnable<Couple<RedstoneLinkNetworkHandler.Frequency>> cir) {
         Couple<RedstoneLinkNetworkHandler.Frequency> key = cir.getReturnValue();
         if (key == null) return;
         UUID owner = this.playerlink$ownerUuid;
-        // Owner == null => vanilla shared behaviour (backward compatible)
         if (owner == null) return;
         RedstoneLinkNetworkHandler.Frequency first = key.getFirst();
         RedstoneLinkNetworkHandler.Frequency second = key.getSecond();

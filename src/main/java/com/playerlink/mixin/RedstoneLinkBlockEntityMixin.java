@@ -4,13 +4,12 @@ import com.playerlink.api.IFrequencyOwner;
 import com.playerlink.api.IOwnedLink;
 import net.createmod.catnip.data.Couple;
 import com.simibubi.create.content.redstone.link.RedstoneLinkNetworkHandler;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -22,11 +21,6 @@ import java.util.UUID;
 
 @Mixin(value = com.simibubi.create.content.redstone.link.RedstoneLinkBlockEntity.class, remap = false)
 public abstract class RedstoneLinkBlockEntityMixin implements IOwnedLink {
-
-    @Shadow(remap = false) public Level level;
-    @Shadow(remap = false) public abstract void setChanged();
-    @Shadow(remap = false) public abstract BlockPos getBlockPos();
-    @Shadow(remap = false) public abstract BlockState getBlockState();
 
     @Unique
     private static final String PLAYERLINK_OWNER_KEY = "PlayerLinkOwner";
@@ -44,10 +38,12 @@ public abstract class RedstoneLinkBlockEntityMixin implements IOwnedLink {
     @Override
     public void playerlink$setOwner(@Nullable UUID owner) {
         this.playerlink$ownerUuid = owner;
-        setChanged();
-        if (this.level != null && !this.level.isClientSide) {
-            BlockState st = getBlockState();
-            this.level.sendBlockUpdated(getBlockPos(), st, st, 3);
+        BlockEntity self = (BlockEntity) (Object) this;
+        self.setChanged();
+        Level lvl = self.getLevel();
+        if (lvl != null && !lvl.isClientSide) {
+            BlockState st = self.getBlockState();
+            lvl.sendBlockUpdated(self.getBlockPos(), st, st, 3);
         }
     }
 

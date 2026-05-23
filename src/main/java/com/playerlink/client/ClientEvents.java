@@ -4,7 +4,6 @@ import com.mojang.blaze3d.platform.InputConstants;
 import com.playerlink.PlayerLinkMod;
 import com.playerlink.network.RequestWhitelistPacket;
 import com.simibubi.create.content.redstone.link.RedstoneLinkBlockEntity;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -37,7 +36,6 @@ public final class ClientEvents {
         event.register(OPEN_OWNER_GUI);
     }
 
-    /** Right-click the link with an empty hand (NOT sneaking) → opens the picker. */
     @SubscribeEvent
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
         if (!event.getLevel().isClientSide()) return;
@@ -54,7 +52,7 @@ public final class ClientEvents {
         BlockEntity be = player.level().getBlockEntity(pos);
         if (!(be instanceof RedstoneLinkBlockEntity)) return;
 
-        chat(player, "§b[PlayerLink]§r Requesting player list...");
+        chat(player, "[PlayerLink] Requesting player list...");
         PlayerLinkMod.LOGGER.info("[PlayerLink] empty-hand RClick on link@{} -> sending packet", pos);
         PacketDistributor.sendToServer(new RequestWhitelistPacket(pos));
 
@@ -74,16 +72,16 @@ public final class ClientEvents {
     private static void tryOpenOwnerGuiViaKeybind(Minecraft mc) {
         HitResult hit = mc.hitResult;
         if (hit == null || !(hit instanceof BlockHitResult bhr) || hit.getType() != HitResult.Type.BLOCK) {
-            chat(mc.player, "§e[PlayerLink]§r Look at a Redstone Link first");
+            chat(mc.player, "[PlayerLink] Look at a Redstone Link first");
             return;
         }
         BlockPos pos = bhr.getBlockPos();
         BlockEntity be = mc.level.getBlockEntity(pos);
         if (!(be instanceof RedstoneLinkBlockEntity)) {
-            chat(mc.player, "§e[PlayerLink]§r That's not a Redstone Link");
+            chat(mc.player, "[PlayerLink] That is not a Redstone Link");
             return;
         }
-        chat(mc.player, "§b[PlayerLink]§r Requesting player list... (K)");
+        chat(mc.player, "[PlayerLink] Requesting player list... (K)");
         PlayerLinkMod.LOGGER.info("[PlayerLink] K pressed on link@{} -> sending packet", pos);
         PacketDistributor.sendToServer(new RequestWhitelistPacket(pos));
     }

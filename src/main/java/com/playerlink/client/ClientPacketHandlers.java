@@ -19,7 +19,7 @@ public final class ClientPacketHandlers {
 
                 if (mc.player != null) {
                     mc.player.displayClientMessage(
-                            Component.literal("§a[PlayerLink]§r Got " + pkt.entries().size() + " players — opening picker..."),
+                            Component.literal("[PlayerLink] Got " + pkt.entries().size() + " players - opening picker..."),
                             false);
                 }
 
@@ -35,7 +35,7 @@ public final class ClientPacketHandlers {
                 Minecraft mc = Minecraft.getInstance();
                 if (mc.player != null) {
                     mc.player.displayClientMessage(
-                            Component.literal("§c[PlayerLink]§r ERROR opening GUI: " + t.getMessage()),
+                            Component.literal("[PlayerLink] ERROR opening GUI: " + t.getMessage()),
                             false);
                 }
             }

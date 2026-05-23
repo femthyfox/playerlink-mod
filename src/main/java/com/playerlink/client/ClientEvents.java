@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import com.playerlink.PlayerLinkMod;
 import com.playerlink.network.RequestWhitelistPacket;
 import com.simibubi.create.content.redstone.link.RedstoneLinkBlockEntity;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -36,35 +37,27 @@ public final class ClientEvents {
         event.register(OPEN_OWNER_GUI);
     }
 
-    /**
-     * "Button" trigger: right-click the link with an EMPTY hand, NOT sneaking.
-     *  - Create's filter-slot interaction requires an item in hand, so this is unused by Create.
-     *  - Sneak+RClick is Create's send/receive toggle, so we explicitly skip that.
-     */
+    /** Right-click the link with an empty hand (NOT sneaking) → opens the picker. */
     @SubscribeEvent
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
         if (!event.getLevel().isClientSide()) return;
-        Player player = event.getEntity();
+        if (event.getHand() != InteractionHand.MAIN_HAND) return;
 
-        // Avoid Create's sneak+rclick (send/receive toggle)
+        Player player = event.getEntity();
         if (player.isShiftKeyDown()) return;
 
-        // Only fire if the main hand is empty (no item interaction conflict)
         ItemStack main = player.getMainHandItem();
         ItemStack off  = player.getOffhandItem();
         if (!main.isEmpty() || !off.isEmpty()) return;
-
-        // Only the main hand event (avoid double-fire)
-        if (event.getHand() != InteractionHand.MAIN_HAND) return;
 
         BlockPos pos = event.getPos();
         BlockEntity be = player.level().getBlockEntity(pos);
         if (!(be instanceof RedstoneLinkBlockEntity)) return;
 
-        PlayerLinkMod.LOGGER.info("[PlayerLink] Empty-hand RClick on link@{} -> opening picker", pos);
+        chat(player, "§b[PlayerLink]§r Requesting player list...");
+        PlayerLinkMod.LOGGER.info("[PlayerLink] empty-hand RClick on link@{} -> sending packet", pos);
         PacketDistributor.sendToServer(new RequestWhitelistPacket(pos));
 
-        // Tell Create's normal handler to NOT also run
         event.setCancellationResult(InteractionResult.SUCCESS);
         event.setCanceled(true);
     }
@@ -81,16 +74,21 @@ public final class ClientEvents {
     private static void tryOpenOwnerGuiViaKeybind(Minecraft mc) {
         HitResult hit = mc.hitResult;
         if (hit == null || !(hit instanceof BlockHitResult bhr) || hit.getType() != HitResult.Type.BLOCK) {
-            mc.player.displayClientMessage(Component.literal("[PlayerLink] Look at a Redstone Link"), true);
+            chat(mc.player, "§e[PlayerLink]§r Look at a Redstone Link first");
             return;
         }
         BlockPos pos = bhr.getBlockPos();
         BlockEntity be = mc.level.getBlockEntity(pos);
         if (!(be instanceof RedstoneLinkBlockEntity)) {
-            mc.player.displayClientMessage(Component.literal("[PlayerLink] That's not a Redstone Link"), true);
+            chat(mc.player, "§e[PlayerLink]§r That's not a Redstone Link");
             return;
         }
-        PlayerLinkMod.LOGGER.info("[PlayerLink] K pressed on link@{} -> opening picker", pos);
+        chat(mc.player, "§b[PlayerLink]§r Requesting player list... (K)");
+        PlayerLinkMod.LOGGER.info("[PlayerLink] K pressed on link@{} -> sending packet", pos);
         PacketDistributor.sendToServer(new RequestWhitelistPacket(pos));
+    }
+
+    private static void chat(Player p, String msg) {
+        if (p != null) p.displayClientMessage(Component.literal(msg), false);
     }
 }

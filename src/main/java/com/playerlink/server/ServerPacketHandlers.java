@@ -1,3 +1,9 @@
+Always returns at minimum yourself
+Sends server-side chat messages telling you exactly what's happening (no log file digging needed!)
+Catches every possible error so we can see it instead of silent failure
+📄 Single file replacement — src/main/java/com/playerlink/server/ServerPacketHandlers.java
+On GitHub, open that file, ✏️ → Ctrl+A → Delete → paste only the code below (no headings, no emoji, nothing else):
+
 package com.playerlink.server;
 
 import com.mojang.authlib.GameProfile;
@@ -28,54 +34,60 @@ public final class ServerPacketHandlers {
 
     public static void handleRequestWhitelist(final RequestWhitelistPacket pkt, final IPayloadContext ctx) {
         ctx.enqueueWork(() -> {
+            ServerPlayer sp = (ctx.player() instanceof ServerPlayer s) ? s : null;
+            if (sp == null) {
+                PlayerLinkMod.LOGGER.warn("[PlayerLink-Server] no ServerPlayer in context");
+                return;
+            }
+            sp.sendSystemMessage(Component.literal("[PlayerLink-Server] Got request"));
+
             try {
-                if (!(ctx.player() instanceof ServerPlayer sp)) {
-                    PlayerLinkMod.LOGGER.warn("[PlayerLink] handleRequestWhitelist: not a ServerPlayer");
-                    return;
-                }
                 MinecraftServer server = sp.getServer();
                 if (server == null) {
-                    PlayerLinkMod.LOGGER.warn("[PlayerLink] handleRequestWhitelist: server is null");
+                    sp.sendSystemMessage(Component.literal("[PlayerLink-Server] server is null"));
                     return;
                 }
 
-                BlockEntity be = sp.level().getBlockEntity(pkt.blockPos());
-                if (!(be instanceof RedstoneLinkBlockEntity)) {
-                    PlayerLinkMod.LOGGER.warn("[PlayerLink] BE@{} is {}, not RedstoneLinkBlockEntity",
-                            pkt.blockPos(),
-                            be == null ? "null" : be.getClass().getName());
-                    sp.sendSystemMessage(Component.literal("[PlayerLink] Not a Redstone Link."));
-                    return;
-                }
-
-                UUID currentOwner = ((IOwnedLink) be).playerlink$getOwner();
-
-                // Build candidate list from multiple sources so SP / unwhitelisted servers also work.
-                // Using LinkedHashMap to dedupe by UUID while preserving insertion order.
                 Map<UUID, String> candidates = new LinkedHashMap<>();
-
-                // 1. The requesting player themselves (always available)
                 candidates.put(sp.getUUID(), sp.getGameProfile().getName());
 
-                // 2. All currently online players
                 for (ServerPlayer p : server.getPlayerList().getPlayers()) {
                     candidates.putIfAbsent(p.getUUID(), p.getGameProfile().getName());
                 }
 
-                // 3. Vanilla whitelist (may be empty in SP / non-whitelisted servers)
-                UserWhiteList wl = server.getPlayerList().getWhiteList();
-                for (String name : wl.getUserList()) {
-                    Optional<GameProfile> p = server.getProfileCache() == null
-                            ? Optional.empty()
-                            : server.getProfileCache().get(name);
-                    p.ifPresent(gp -> candidates.putIfAbsent(gp.getId(), gp.getName()));
+                try {
+                    UserWhiteList wl = server.getPlayerList().getWhiteList();
+                    for (String name : wl.getUserList()) {
+                        Optional<GameProfile> gp = server.getProfileCache() == null
+                                ? Optional.empty()
+                                : server.getProfileCache().get(name);
+                        gp.ifPresent(g -> candidates.putIfAbsent(g.getId(), g.getName()));
+                    }
+                } catch (Throwable t) {
+                    PlayerLinkMod.LOGGER.warn("[PlayerLink-Server] whitelist read failed: {}", t.getMessage());
                 }
 
-                List<WhitelistResponsePacket.Entry> entries = new ArrayList<>(candidates.size());
+                UUID currentOwner = null;
+                BlockEntity be = sp.level().getBlockEntity(pkt.blockPos());
+                if (be != null) {
+                    try {
+                        if (be instanceof IOwnedLink iol) {
+                            currentOwner = iol.playerlink$getOwner();
+                        } else {
+                            sp.sendSystemMessage(Component.literal("[PlayerLink-Server] WARN: BE doesn't implement IOwnedLink (mixin not applied?). Class: " + be.getClass().getName()));
+                        }
+                    } catch (Throwable t) {
+                        sp.sendSystemMessage(Component.literal("[PlayerLink-Server] WARN owner read failed: " + t.getMessage()));
+                    }
+                } else {
+                    sp.sendSystemMessage(Component.literal("[PlayerLink-Server] WARN: no BlockEntity at " + pkt.blockPos()));
+                }
+
+                List<WhitelistResponsePacket.Entry> entries = new ArrayList<>();
                 candidates.forEach((id, name) -> entries.add(new WhitelistResponsePacket.Entry(id, name)));
 
-                PlayerLinkMod.LOGGER.info("[PlayerLink] Sending whitelist response: {} candidates, currentOwner={}",
-                        entries.size(), currentOwner);
+                sp.sendSystemMessage(Component.literal("[PlayerLink-Server] Sending " + entries.size() + " candidate(s)"));
+                PlayerLinkMod.LOGGER.info("[PlayerLink-Server] Sending {} candidates to {}", entries.size(), sp.getName().getString());
 
                 PacketDistributor.sendToPlayer(sp, new WhitelistResponsePacket(
                         pkt.blockPos(),
@@ -83,56 +95,49 @@ public final class ServerPacketHandlers {
                         entries
                 ));
             } catch (Throwable t) {
-                PlayerLinkMod.LOGGER.error("[PlayerLink] handleRequestWhitelist crashed", t);
+                PlayerLinkMod.LOGGER.error("[PlayerLink-Server] handleRequestWhitelist crashed", t);
+                sp.sendSystemMessage(Component.literal("[PlayerLink-Server] ERROR: " + t.getClass().getSimpleName() + ": " + t.getMessage()));
             }
         });
     }
 
     public static void handleSetOwner(final SetOwnerPacket pkt, final IPayloadContext ctx) {
         ctx.enqueueWork(() -> {
+            ServerPlayer sp = (ctx.player() instanceof ServerPlayer s) ? s : null;
+            if (sp == null) return;
             try {
-                if (!(ctx.player() instanceof ServerPlayer sp)) return;
-                MinecraftServer server = sp.getServer();
-                if (server == null) return;
-
                 BlockEntity be = sp.level().getBlockEntity(pkt.blockPos());
-                if (!(be instanceof RedstoneLinkBlockEntity link)) {
-                    sp.sendSystemMessage(Component.literal("[PlayerLink] Not a Redstone Link."));
+                if (be == null) {
+                    sp.sendSystemMessage(Component.literal("[PlayerLink] No block entity at that position"));
+                    return;
+                }
+
+                if (!(be instanceof IOwnedLink iol)) {
+                    sp.sendSystemMessage(Component.literal("[PlayerLink] ERROR: BE doesn't implement IOwnedLink (mixin failed). Class: " + be.getClass().getName()));
                     return;
                 }
 
                 if (pkt.newOwner().isPresent()) {
-                    UUID candidate = pkt.newOwner().get();
+                    UUID newId = pkt.newOwner().get();
+                    String newName = newId.equals(sp.getUUID())
+                            ? sp.getGameProfile().getName()
+                            : (sp.getServer() != null && sp.getServer().getProfileCache() != null
+                                ? sp.getServer().getProfileCache().get(newId).map(GameProfile::getName).orElse(newId.toString().substring(0, 8))
+                                : newId.toString().substring(0, 8));
 
-                    // Resolve a display name for the chat feedback (best effort)
-                    String matchedName = null;
-                    if (sp.getUUID().equals(candidate)) {
-                        matchedName = sp.getGameProfile().getName();
-                    } else {
-                        for (ServerPlayer p : server.getPlayerList().getPlayers()) {
-                            if (p.getUUID().equals(candidate)) {
-                                matchedName = p.getGameProfile().getName();
-                                break;
-                            }
-                        }
-                        if (matchedName == null && server.getProfileCache() != null) {
-                            matchedName = server.getProfileCache().get(candidate)
-                                    .map(GameProfile::getName).orElse(candidate.toString().substring(0, 8));
-                        }
-                    }
-
-                    ((IOwnedLink) link).playerlink$setOwner(candidate);
-                    sp.sendSystemMessage(Component.literal("[PlayerLink] Owner set to: " + matchedName));
-                    PlayerLinkMod.LOGGER.info("[PlayerLink] {} set owner of link@{} to {} ({})",
-                            sp.getName().getString(), pkt.blockPos(), matchedName, candidate);
+                    iol.playerlink$setOwner(newId);
+                    sp.sendSystemMessage(Component.literal("[PlayerLink] Owner set to: " + newName));
+                    PlayerLinkMod.LOGGER.info("[PlayerLink-Server] {} set owner of link@{} to {} ({})",
+                            sp.getName().getString(), pkt.blockPos(), newName, newId);
                 } else {
-                    ((IOwnedLink) link).playerlink$setOwner(null);
-                    sp.sendSystemMessage(Component.literal("[PlayerLink] Owner cleared."));
-                    PlayerLinkMod.LOGGER.info("[PlayerLink] {} cleared owner of link@{}",
+                    iol.playerlink$setOwner(null);
+                    sp.sendSystemMessage(Component.literal("[PlayerLink] Owner cleared"));
+                    PlayerLinkMod.LOGGER.info("[PlayerLink-Server] {} cleared owner of link@{}",
                             sp.getName().getString(), pkt.blockPos());
                 }
             } catch (Throwable t) {
-                PlayerLinkMod.LOGGER.error("[PlayerLink] handleSetOwner crashed", t);
+                PlayerLinkMod.LOGGER.error("[PlayerLink-Server] handleSetOwner crashed", t);
+                sp.sendSystemMessage(Component.literal("[PlayerLink-Server] ERROR: " + t.getClass().getSimpleName() + ": " + t.getMessage()));
             }
         });
     }

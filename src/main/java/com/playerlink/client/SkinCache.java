@@ -3,6 +3,7 @@ package com.playerlink.client;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.resources.ResourceLocation;
@@ -27,7 +28,6 @@ public final class SkinCache {
 
         Minecraft mc = Minecraft.getInstance();
 
-        // 1) Local player short-circuit (this client's own skin)
         LocalPlayer self = mc.player;
         if (self != null && uuid.equals(self.getUUID())) {
             ResourceLocation tex = self.getSkin().texture();
@@ -35,18 +35,16 @@ public final class SkinCache {
             return tex;
         }
 
-        // 2) Any player entity currently loaded in the world
         ClientLevel lvl = mc.level;
         if (lvl != null) {
             Player p = lvl.getPlayerByUUID(uuid);
-            if (p != null) {
-                ResourceLocation tex = p.getSkin().texture();
+            if (p instanceof AbstractClientPlayer acp) {
+                ResourceLocation tex = acp.getSkin().texture();
                 CACHE.put(uuid, tex);
                 return tex;
             }
         }
 
-        // 3) Async resolve for offline / never-loaded whitelisted players
         AtomicBoolean inFlight = PENDING.computeIfAbsent(uuid, u -> new AtomicBoolean(false));
         if (inFlight.compareAndSet(false, true)) {
             GameProfile profile = new GameProfile(uuid, name == null ? "" : name);

@@ -39,9 +39,7 @@ public abstract class RedstoneLinkBlockEntityMixin implements IOwnedLink {
     private LinkBehaviour playerlink$findLink() {
         BlockEntity self = (BlockEntity) (Object) this;
         if (!(self instanceof SmartBlockEntity sbe)) return null;
-        LinkBehaviour lb = sbe.getBehaviour(LinkBehaviour.RECEIVER);
-        if (lb == null) lb = sbe.getBehaviour(LinkBehaviour.TRANSMITTER);
-        return lb;
+        return sbe.getBehaviour(LinkBehaviour.TYPE);
     }
 
     @Override
@@ -55,15 +53,12 @@ public abstract class RedstoneLinkBlockEntityMixin implements IOwnedLink {
         if (this.level != null && !this.level.isClientSide) {
             LinkBehaviour link = playerlink$findLink();
 
-            // 1) Evict from current bucket (still keyed by OLD owner UUID)
             if (link != null) {
                 Create.REDSTONE_LINK_NETWORK_HANDLER.removeFromNetwork(this.level, link);
             }
 
-            // 2) Mutate owner
             this.playerlink$ownerUuid = owner;
 
-            // 3) Re-register under NEW key (LinkBehaviourMixin tags with NEW owner, or null = public)
             if (link != null) {
                 Create.REDSTONE_LINK_NETWORK_HANDLER.addToNetwork(this.level, link);
             }

@@ -1,9 +1,6 @@
 package com.playerlink.mixin;
 
-import com.playerlink.api.IFrequencyOwner;
 import com.playerlink.api.IOwnedLink;
-import net.createmod.catnip.data.Couple;
-import com.simibubi.create.content.redstone.link.RedstoneLinkNetworkHandler;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
@@ -14,7 +11,6 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import javax.annotation.Nullable;
 import java.util.UUID;
@@ -61,17 +57,5 @@ public abstract class RedstoneLinkBlockEntityMixin implements IOwnedLink {
         } else {
             this.playerlink$ownerUuid = null;
         }
-    }
-
-    @Inject(method = "getNetworkKey", at = @At("RETURN"), remap = false)
-    private void playerlink$tagFrequencies(CallbackInfoReturnable<Couple<RedstoneLinkNetworkHandler.Frequency>> cir) {
-        Couple<RedstoneLinkNetworkHandler.Frequency> key = cir.getReturnValue();
-        if (key == null) return;
-        UUID owner = this.playerlink$ownerUuid;
-        if (owner == null) return;
-        RedstoneLinkNetworkHandler.Frequency first = key.getFirst();
-        RedstoneLinkNetworkHandler.Frequency second = key.getSecond();
-        if (first instanceof IFrequencyOwner fo) fo.playerlink$setOwner(owner);
-        if (second instanceof IFrequencyOwner fo) fo.playerlink$setOwner(owner);
     }
 }

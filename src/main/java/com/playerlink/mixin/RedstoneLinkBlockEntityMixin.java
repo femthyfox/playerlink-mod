@@ -1,6 +1,9 @@
 package com.playerlink.mixin;
 
 import com.playerlink.api.IOwnedLink;
+import com.simibubi.create.Create;
+import com.simibubi.create.content.redstone.link.LinkBehaviour;
+import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
@@ -33,11 +36,36 @@ public abstract class RedstoneLinkBlockEntityMixin implements IOwnedLink {
 
     @Override
     public void playerlink$setOwner(@Nullable UUID owner) {
-        this.playerlink$ownerUuid = owner;
         BlockEntity self = (BlockEntity) (Object) this;
-        self.setChanged();
         Level lvl = self.getLevel();
-        if (lvl != null && !lvl.isClientSide) {
+        boolean serverSide = (lvl != null && !lvl.isClientSide);
+
+        // Find this BE's LinkBehaviour (Create's network-routing helper)
+        LinkBehaviour link = null;
+        if (self instanceof SmartBlockEntity sbe) {
+            link = sbe.getBehaviour(LinkBehaviour.TYPE);
+        }
+
+        // 1) Remove from the network with the OLD key (current owner)
+        if (serverSide && link != null) {
+            try {
+                Create.REDSTONE_LINK_NETWORK_HANDLER.removeFromNetwork(lvl, link);
+            } catch (Throwable ignored) {}
+        }
+
+        // 2) Actually change the owner
+        this.playerlink$ownerUuid = owner;
+
+        // 3) Re-add to the network with the NEW key (new owner)
+        if (serverSide && link != null) {
+            try {
+                Create.REDSTONE_LINK_NETWORK_HANDLER.addToNetwork(lvl, link);
+            } catch (Throwable ignored) {}
+        }
+
+        // 4) Mark BE dirty + send block update so clients see the new owner
+        self.setChanged();
+        if (serverSide) {
             BlockState st = self.getBlockState();
             lvl.sendBlockUpdated(self.getBlockPos(), st, st, 3);
         }

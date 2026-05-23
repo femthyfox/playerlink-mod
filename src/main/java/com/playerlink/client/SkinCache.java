@@ -2,13 +2,13 @@ package com.playerlink.client;
 
 import com.mojang.authlib.GameProfile;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
 
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -20,53 +20,48 @@ public final class SkinCache {
     private SkinCache() {}
 
     public static ResourceLocation get(UUID uuid, String name) {
-        Minecraft mc = Minecraft.getInstance();
+        if (uuid == null) return DefaultPlayerSkin.get(new UUID(0L, 0L)).texture();
 
-        // 1. Local player? Use their live skin directly (always loaded).
-        LocalPlayer local = mc.player;
-        if (local != null && local.getUUID().equals(uuid)) {
-            return local.getSkin().texture();
-        }
-
-        // 2. Online player on the current connection? Use their PlayerInfo skin.
-        if (mc.getConnection() != null) {
-            PlayerInfo info = mc.getConnection().getPlayerInfo(uuid);
-            if (info != null) {
-                return info.getSkin().texture();
-            }
-        }
-
-        // 3. Cached from an earlier async Mojang fetch?
         ResourceLocation cached = CACHE.get(uuid);
         if (cached != null) return cached;
 
-        // 4. Kick off an async Mojang fetch in the background.
-        AtomicBoolean inFlight = PENDING.computeIfAbsent(uuid, u -> new AtomicBoolean(false));
-        if (inFlight.compareAndSet(false, true)) {
-            final String displayName = name == null ? "Player" : name;
-            CompletableFuture.runAsync(() -> {
-                try {
-                    GameProfile profile = new GameProfile(uuid, displayName);
+        Minecraft mc = Minecraft.getInstance();
 
-                    // Try to fill profile properties (textures) from Mojang session service.
-                    try {
-                        var result = mc.getMinecraftSessionService().fetchProfile(uuid, true);
-                        if (result != null && result.profile() != null) {
-                            profile = result.profile();
-                        }
-                    } catch (Throwable ignored) {}
-
-                    final GameProfile finalProfile = profile;
-                    mc.getSkinManager().getOrLoad(finalProfile)
-                            .thenAccept(skin -> CACHE.put(uuid, skin.texture()))
-                            .exceptionally(t -> { PENDING.remove(uuid); return null; });
-                } catch (Throwable t) {
-                    PENDING.remove(uuid);
-                }
-            });
+        // 1) Local player short-circuit (this client's own skin)
+        LocalPlayer self = mc.player;
+        if (self != null && uuid.equals(self.getUUID())) {
+            ResourceLocation tex = self.getSkin().texture();
+            CACHE.put(uuid, tex);
+            return tex;
         }
 
-        // 5. Show default Steve/Alex while we wait for the async fetch.
+        // 2) Any player entity currently loaded in the world
+        ClientLevel lvl = mc.level;
+        if (lvl != null) {
+            Player p = lvl.getPlayerByUUID(uuid);
+            if (p != null) {
+                ResourceLocation tex = p.getSkin().texture();
+                CACHE.put(uuid, tex);
+                return tex;
+            }
+        }
+
+        // 3) Async resolve for offline / never-loaded whitelisted players
+        AtomicBoolean inFlight = PENDING.computeIfAbsent(uuid, u -> new AtomicBoolean(false));
+        if (inFlight.compareAndSet(false, true)) {
+            GameProfile profile = new GameProfile(uuid, name == null ? "" : name);
+            mc.getSkinManager()
+              .getOrLoad(profile)
+              .thenAccept(skin -> {
+                  CACHE.put(uuid, skin.texture());
+                  PENDING.remove(uuid);
+              })
+              .exceptionally(t -> {
+                  PENDING.remove(uuid);
+                  return null;
+              });
+        }
+
         return DefaultPlayerSkin.get(uuid).texture();
     }
 }

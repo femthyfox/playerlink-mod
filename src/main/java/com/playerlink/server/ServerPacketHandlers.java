@@ -1,9 +1,3 @@
-Always returns at minimum yourself
-Sends server-side chat messages telling you exactly what's happening (no log file digging needed!)
-Catches every possible error so we can see it instead of silent failure
-📄 Single file replacement — src/main/java/com/playerlink/server/ServerPacketHandlers.java
-On GitHub, open that file, ✏️ → Ctrl+A → Delete → paste only the code below (no headings, no emoji, nothing else):
-
 package com.playerlink.server;
 
 import com.mojang.authlib.GameProfile;
@@ -12,7 +6,6 @@ import com.playerlink.api.IOwnedLink;
 import com.playerlink.network.RequestWhitelistPacket;
 import com.playerlink.network.SetOwnerPacket;
 import com.playerlink.network.WhitelistResponsePacket;
-import com.simibubi.create.content.redstone.link.RedstoneLinkBlockEntity;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;

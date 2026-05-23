@@ -39,9 +39,7 @@ public abstract class RedstoneLinkBlockEntityMixin implements IOwnedLink {
     private LinkBehaviour playerlink$findLink() {
         BlockEntity self = (BlockEntity) (Object) this;
         if (!(self instanceof SmartBlockEntity sbe)) return null;
-        LinkBehaviour lb = sbe.getBehaviour(LinkBehaviour.RECEIVER);
-        if (lb == null) lb = sbe.getBehaviour(LinkBehaviour.TRANSMITTER);
-        return lb;
+        return sbe.getBehaviour(LinkBehaviour.TYPE);
     }
 
     @Override

@@ -16,6 +16,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
@@ -43,6 +44,24 @@ public final class ClientEvents {
         while (OPEN_OWNER_GUI.consumeClick()) {
             tryOpenOwnerGui(mc, mc.player, mc.level);
         }
+    }
+
+    @SubscribeEvent
+    public static void onMouseClick(final InputEvent.MouseButton.Pre event) {
+        if (event.getButton() != GLFW.GLFW_MOUSE_BUTTON_LEFT) return;
+        if (event.getAction() != GLFW.GLFW_PRESS) return;
+
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.level == null || mc.screen != null) return;
+        if (!mc.player.getMainHandItem().isEmpty()) return;
+
+        HitResult hit = mc.hitResult;
+        if (!(hit instanceof BlockHitResult bhr) || hit.getType() != HitResult.Type.BLOCK) return;
+        BlockEntity be = mc.level.getBlockEntity(bhr.getBlockPos());
+        if (!(be instanceof RedstoneLinkBlockEntity)) return;
+
+        PacketDistributor.sendToServer(new RequestWhitelistPacket(bhr.getBlockPos()));
+        event.setCanceled(true);
     }
 
     private static void tryOpenOwnerGui(Minecraft mc, LocalPlayer player, ClientLevel level) {

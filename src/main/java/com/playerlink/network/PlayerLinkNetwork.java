@@ -2,9 +2,8 @@ package com.playerlink.network;
 
 import com.playerlink.PlayerLinkMod;
 import com.playerlink.server.ServerPacketHandlers;
-import com.playerlink.client.ClientPacketHandlers;
-import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
@@ -16,21 +15,22 @@ public class PlayerLinkNetwork {
     public static void register(final RegisterPayloadHandlersEvent event) {
         final PayloadRegistrar registrar = event.registrar(PROTOCOL_VERSION);
 
-        // C -> S : request the whitelist (player wants to open the owner GUI)
         registrar.playToServer(
                 RequestWhitelistPacket.TYPE,
                 RequestWhitelistPacket.STREAM_CODEC,
                 ServerPacketHandlers::handleRequestWhitelist
         );
 
-        // S -> C : whitelist response
-        registrar.playToClient(
-                WhitelistResponsePacket.TYPE,
-                WhitelistResponsePacket.STREAM_CODEC,
-                ClientPacketHandlers::handleWhitelistResponse
-        );
+        if (FMLEnvironment.dist.isClient()) {
+            ClientNetwork.registerClient(registrar);
+        } else {
+            registrar.playToClient(
+                    WhitelistResponsePacket.TYPE,
+                    WhitelistResponsePacket.STREAM_CODEC,
+                    (pkt, ctx) -> {}
+            );
+        }
 
-        // C -> S : assign owner to a redstone link
         registrar.playToServer(
                 SetOwnerPacket.TYPE,
                 SetOwnerPacket.STREAM_CODEC,

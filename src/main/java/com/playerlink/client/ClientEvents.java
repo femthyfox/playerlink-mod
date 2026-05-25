@@ -61,6 +61,7 @@ public final class ClientEvents {
         BlockEntity be = mc.level.getBlockEntity(bhr.getBlockPos());
         if (!(be instanceof RedstoneLinkBlockEntity)) return;
 
+        PlayerLinkMod.LOGGER.info("[PlayerLink] Click detected on link at {}, sending packet", bhr.getBlockPos());
         PacketDistributor.sendToServer(new RequestWhitelistPacket(bhr.getBlockPos()));
         event.setCanceled(true);
     }
@@ -70,6 +71,7 @@ public final class ClientEvents {
         if (!(hit instanceof BlockHitResult bhr) || hit.getType() != HitResult.Type.BLOCK) return;
         BlockEntity be = level.getBlockEntity(bhr.getBlockPos());
         if (!(be instanceof RedstoneLinkBlockEntity)) return;
+        PlayerLinkMod.LOGGER.info("[PlayerLink] K-key on link at {}, sending packet", bhr.getBlockPos());
         PacketDistributor.sendToServer(new RequestWhitelistPacket(bhr.getBlockPos()));
     }
 }

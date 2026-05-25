@@ -24,6 +24,8 @@ import java.util.UUID;
 
 public final class ServerPacketHandlers {
 
+    private static final double MAX_REACH_SQR = 1296.0;
+
     private ServerPacketHandlers() {}
 
     public static void handleRequestWhitelist(final RequestWhitelistPacket pkt, final IPayloadContext ctx) {
@@ -32,9 +34,21 @@ public final class ServerPacketHandlers {
             MinecraftServer server = sp.getServer();
             if (server == null) return;
 
+            PlayerLinkMod.LOGGER.info("[PlayerLink] Got request from {} for link@{}",
+                    sp.getName().getString(), pkt.blockPos());
+
             BlockEntity be = sp.level().getBlockEntity(pkt.blockPos());
-            if (!(be instanceof RedstoneLinkBlockEntity)) return;
-            if (sp.distanceToSqr(pkt.blockPos().getCenter()) > 64.0) return;
+            if (!(be instanceof RedstoneLinkBlockEntity)) {
+                PlayerLinkMod.LOGGER.warn("[PlayerLink] {} requested non-link block at {}",
+                        sp.getName().getString(), pkt.blockPos());
+                return;
+            }
+            double distSqr = sp.distanceToSqr(pkt.blockPos().getCenter());
+            if (distSqr > MAX_REACH_SQR) {
+                PlayerLinkMod.LOGGER.warn("[PlayerLink] {} too far from link@{} (distSqr={})",
+                        sp.getName().getString(), pkt.blockPos(), distSqr);
+                return;
+            }
 
             UUID currentOwner = ((IOwnedLink) be).playerlink$getOwner();
 
@@ -57,6 +71,8 @@ public final class ServerPacketHandlers {
                 }
             }
 
+            PlayerLinkMod.LOGGER.info("[PlayerLink] Sending {} entries to {}", entries.size(), sp.getName().getString());
+
             PacketDistributor.sendToPlayer(sp, new WhitelistResponsePacket(
                     pkt.blockPos(),
                     Optional.ofNullable(currentOwner),
@@ -74,7 +90,7 @@ public final class ServerPacketHandlers {
             Level level = sp.level();
             BlockEntity be = level.getBlockEntity(pkt.blockPos());
             if (!(be instanceof RedstoneLinkBlockEntity link)) return;
-            if (sp.distanceToSqr(pkt.blockPos().getCenter()) > 64.0) return;
+            if (sp.distanceToSqr(pkt.blockPos().getCenter()) > MAX_REACH_SQR) return;
 
             Optional<UUID> newOwner = pkt.newOwner();
             if (newOwner.isPresent()) {
@@ -101,7 +117,7 @@ public final class ServerPacketHandlers {
                 ((IOwnedLink) link).playerlink$setOwner(null);
             }
 
-            PlayerLinkMod.LOGGER.debug("[PlayerLink] {} set owner of link@{} to {}",
+            PlayerLinkMod.LOGGER.info("[PlayerLink] {} set owner of link@{} to {}",
                     sp.getName().getString(), pkt.blockPos(), newOwner.orElse(null));
         });
     }

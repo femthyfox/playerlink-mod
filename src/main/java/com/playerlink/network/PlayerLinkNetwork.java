@@ -1,13 +1,10 @@
 package com.playerlink.network;
 
-import com.playerlink.PlayerLinkMod;
 import com.playerlink.server.ServerPacketHandlers;
-import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
-@EventBusSubscriber(modid = PlayerLinkMod.MODID, bus = EventBusSubscriber.Bus.MOD)
 public class PlayerLinkNetwork {
 
     public static final String PROTOCOL_VERSION = "1";

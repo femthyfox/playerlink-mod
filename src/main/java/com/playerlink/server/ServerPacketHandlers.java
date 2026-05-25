@@ -24,6 +24,9 @@ import java.util.UUID;
 
 public final class ServerPacketHandlers {
 
+    // 36 blocks squared - very generous, accounts for elytra/creative/lag
+    private static final double MAX_REACH_SQR = 1296.0;
+
     private ServerPacketHandlers() {}
 
     public static void handleRequestWhitelist(final RequestWhitelistPacket pkt, final IPayloadContext ctx) {
@@ -32,16 +35,27 @@ public final class ServerPacketHandlers {
             MinecraftServer server = sp.getServer();
             if (server == null) return;
 
+            PlayerLinkMod.LOGGER.info("[PlayerLink] Got request from {} for link@{}",
+                    sp.getName().getString(), pkt.blockPos());
+
             BlockEntity be = sp.level().getBlockEntity(pkt.blockPos());
-            if (!(be instanceof RedstoneLinkBlockEntity)) return;
-            if (sp.distanceToSqr(pkt.blockPos().getCenter()) > 64.0) return;
+            if (!(be instanceof RedstoneLinkBlockEntity)) {
+                PlayerLinkMod.LOGGER.warn("[PlayerLink] {} requested non-link block at {}",
+                        sp.getName().getString(), pkt.blockPos());
+                return;
+            }
+            double distSqr = sp.distanceToSqr(pkt.blockPos().getCenter());
+            if (distSqr > MAX_REACH_SQR) {
+                PlayerLinkMod.LOGGER.warn("[PlayerLink] {} too far from link@{} (distSqr={})",
+                        sp.getName().getString(), pkt.blockPos(), distSqr);
+                return;
+            }
 
             UUID currentOwner = ((IOwnedLink) be).playerlink$getOwner();
 
             List<WhitelistResponsePacket.Entry> entries = new ArrayList<>();
             Set<UUID> seen = new HashSet<>();
 
-            // Whitelist (if any)
             UserWhiteList whitelist = server.getPlayerList().getWhiteList();
             for (String name : whitelist.getUserList()) {
                 Optional<GameProfile> profileOpt = server.getProfileCache() == null
@@ -52,12 +66,13 @@ public final class ServerPacketHandlers {
                 }
             }
 
-            // Fallback / supplement: all currently online players
             for (ServerPlayer online : server.getPlayerList().getPlayers()) {
                 if (seen.add(online.getUUID())) {
                     entries.add(new WhitelistResponsePacket.Entry(online.getUUID(), online.getGameProfile().getName()));
                 }
             }
+
+            PlayerLinkMod.LOGGER.info("[PlayerLink] Sending {} entries to {}", entries.size(), sp.getName().getString());
 
             PacketDistributor.sendToPlayer(sp, new WhitelistResponsePacket(
                     pkt.blockPos(),
@@ -76,14 +91,13 @@ public final class ServerPacketHandlers {
             Level level = sp.level();
             BlockEntity be = level.getBlockEntity(pkt.blockPos());
             if (!(be instanceof RedstoneLinkBlockEntity link)) return;
-            if (sp.distanceToSqr(pkt.blockPos().getCenter()) > 64.0) return;
+            if (sp.distanceToSqr(pkt.blockPos().getCenter()) > MAX_REACH_SQR) return;
 
             Optional<UUID> newOwner = pkt.newOwner();
             if (newOwner.isPresent()) {
                 UUID candidate = newOwner.get();
                 boolean ok = false;
 
-                // Accept if on whitelist
                 UserWhiteList whitelist = server.getPlayerList().getWhiteList();
                 for (String name : whitelist.getUserList()) {
                     Optional<GameProfile> p = server.getProfileCache() == null
@@ -92,7 +106,6 @@ public final class ServerPacketHandlers {
                     if (p.isPresent() && p.get().getId().equals(candidate)) { ok = true; break; }
                 }
 
-                // Or if online right now
                 if (!ok) {
                     for (ServerPlayer online : server.getPlayerList().getPlayers()) {
                         if (online.getUUID().equals(candidate)) { ok = true; break; }
@@ -105,7 +118,7 @@ public final class ServerPacketHandlers {
                 ((IOwnedLink) link).playerlink$setOwner(null);
             }
 
-            PlayerLinkMod.LOGGER.debug("[PlayerLink] {} set owner of link@{} to {}",
+            PlayerLinkMod.LOGGER.info("[PlayerLink] {} set owner of link@{} to {}",
                     sp.getName().getString(), pkt.blockPos(), newOwner.orElse(null));
         });
     }

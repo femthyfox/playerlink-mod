@@ -53,7 +53,7 @@ public final class ClientEvents {
 
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null || mc.screen != null) return;
-        if (mc.player.isShiftKeyDown()) return; // let Create handle shift+click (mode toggle)
+        if (mc.player.isShiftKeyDown()) return;
         if (!mc.player.getMainHandItem().isEmpty()) return;
 
         HitResult hit = mc.hitResult;
@@ -61,6 +61,7 @@ public final class ClientEvents {
         BlockEntity be = mc.level.getBlockEntity(bhr.getBlockPos());
         if (!(be instanceof RedstoneLinkBlockEntity)) return;
 
+        PlayerLinkMod.LOGGER.info("[PlayerLink] Click detected on link at {}, sending packet", bhr.getBlockPos());
         PacketDistributor.sendToServer(new RequestWhitelistPacket(bhr.getBlockPos()));
         event.setCanceled(true);
     }
@@ -70,6 +71,7 @@ public final class ClientEvents {
         if (!(hit instanceof BlockHitResult bhr) || hit.getType() != HitResult.Type.BLOCK) return;
         BlockEntity be = level.getBlockEntity(bhr.getBlockPos());
         if (!(be instanceof RedstoneLinkBlockEntity)) return;
+        PlayerLinkMod.LOGGER.info("[PlayerLink] K-key on link at {}, sending packet", bhr.getBlockPos());
         PacketDistributor.sendToServer(new RequestWhitelistPacket(bhr.getBlockPos()));
     }
 }

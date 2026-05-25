@@ -1,6 +1,5 @@
 package com.playerlink;
 
-import com.playerlink.network.PlayerLinkNetwork;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
@@ -16,10 +15,12 @@ public class PlayerLinkMod {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public PlayerLinkMod(IEventBus modBus) {
-        modBus.addListener(this::commonSetup);
-        modBus.addListener(PlayerLinkNetwork::register);
+        LOGGER.info("[PlayerLink] === BUILD-MARKER-2026-05-25-V2 === Constructor starting");
 
-        // Server-side event bus listeners (commands, etc.)
+        modBus.addListener(this::commonSetup);
+
+        LOGGER.info("[PlayerLink] Constructor: registered commonSetup listener");
+
         NeoForge.EVENT_BUS.register(com.playerlink.server.ServerEvents.class);
 
         if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) {
@@ -27,6 +28,8 @@ public class PlayerLinkMod {
             NeoForge.EVENT_BUS.register(com.playerlink.client.ClientEvents.class);
             modBus.addListener(com.playerlink.client.ClientEvents::registerKeyMappings);
         }
+
+        LOGGER.info("[PlayerLink] === Constructor finished ===");
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {

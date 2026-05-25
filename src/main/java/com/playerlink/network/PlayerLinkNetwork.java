@@ -24,7 +24,13 @@ public class PlayerLinkNetwork {
         PlayerLinkMod.LOGGER.info("[PlayerLink] Registered playToServer: request_whitelist");
 
         if (FMLEnvironment.dist.isClient()) {
-            ClientNetwork.registerClient(registrar);
+            try {
+                Class.forName("com.playerlink.network.ClientNetwork")
+                        .getMethod("registerClient", PayloadRegistrar.class)
+                        .invoke(null, registrar);
+            } catch (Throwable t) {
+                PlayerLinkMod.LOGGER.error("[PlayerLink] Failed to register client handler", t);
+            }
         } else {
             registrar.playToClient(
                     WhitelistResponsePacket.TYPE,

@@ -48,13 +48,13 @@ public final class ClientEvents {
 
     @SubscribeEvent
     public static void onMouseClick(final InputEvent.MouseButton.Pre event) {
-        // Left mouse button only
         if (event.getButton() != GLFW.GLFW_MOUSE_BUTTON_LEFT) return;
         if (event.getAction() != GLFW.GLFW_PRESS) return;
 
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null || mc.screen != null) return;
-        if (!mc.player.getMainHandItem().isEmpty()) return; // must be empty hand to avoid breaking the block
+        if (mc.player.isShiftKeyDown()) return; // let Create handle shift+click (mode toggle)
+        if (!mc.player.getMainHandItem().isEmpty()) return;
 
         HitResult hit = mc.hitResult;
         if (!(hit instanceof BlockHitResult bhr) || hit.getType() != HitResult.Type.BLOCK) return;
@@ -62,7 +62,7 @@ public final class ClientEvents {
         if (!(be instanceof RedstoneLinkBlockEntity)) return;
 
         PacketDistributor.sendToServer(new RequestWhitelistPacket(bhr.getBlockPos()));
-        event.setCanceled(true); // stop the punch/break action
+        event.setCanceled(true);
     }
 
     private static void tryOpenOwnerGui(Minecraft mc, LocalPlayer player, ClientLevel level) {

@@ -24,10 +24,8 @@ public abstract class LinkBehaviourMixin {
 
         BlockEntityBehaviour selfBeh = (BlockEntityBehaviour) (Object) this;
         SmartBlockEntity be = selfBeh.blockEntity;
-        if (!(be instanceof IOwnedLink owned)) return;
 
-        UUID owner = owned.playerlink$getOwner();
-        if (owner == null) return;
+        UUID owner = (be instanceof IOwnedLink owned) ? owned.playerlink$getOwner() : null;
 
         RedstoneLinkNetworkHandler.Frequency first = key.getFirst();
         RedstoneLinkNetworkHandler.Frequency second = key.getSecond();

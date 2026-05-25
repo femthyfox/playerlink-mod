@@ -17,19 +17,24 @@ import java.util.UUID;
 @Mixin(value = LinkBehaviour.class, remap = false)
 public abstract class LinkBehaviourMixin {
 
-    @Inject(method = "getNetworkKey", at = @At("RETURN"), remap = false)
+    @Inject(method = "getNetworkKey", at = @At("RETURN"), cancellable = true, remap = false)
     private void playerlink$tagFrequencies(CallbackInfoReturnable<Couple<RedstoneLinkNetworkHandler.Frequency>> cir) {
-        Couple<RedstoneLinkNetworkHandler.Frequency> key = cir.getReturnValue();
-        if (key == null) return;
+        Couple<RedstoneLinkNetworkHandler.Frequency> originalKey = cir.getReturnValue();
+        if (originalKey == null) return;
 
         BlockEntityBehaviour selfBeh = (BlockEntityBehaviour) (Object) this;
         SmartBlockEntity be = selfBeh.blockEntity;
 
         UUID owner = (be instanceof IOwnedLink owned) ? owned.playerlink$getOwner() : null;
 
-        RedstoneLinkNetworkHandler.Frequency first = key.getFirst();
-        RedstoneLinkNetworkHandler.Frequency second = key.getSecond();
-        if (first instanceof IFrequencyOwner fo) fo.playerlink$setOwner(owner);
-        if (second instanceof IFrequencyOwner fo) fo.playerlink$setOwner(owner);
+        RedstoneLinkNetworkHandler.Frequency origFirst = originalKey.getFirst();
+        RedstoneLinkNetworkHandler.Frequency origSecond = originalKey.getSecond();
+
+        RedstoneLinkNetworkHandler.Frequency newFirst = RedstoneLinkNetworkHandler.Frequency.of(origFirst.getStack());
+        RedstoneLinkNetworkHandler.Frequency newSecond = RedstoneLinkNetworkHandler.Frequency.of(origSecond.getStack());
+        if (newFirst instanceof IFrequencyOwner fo) fo.playerlink$setOwner(owner);
+        if (newSecond instanceof IFrequencyOwner fo) fo.playerlink$setOwner(owner);
+
+        cir.setReturnValue(Couple.create(newFirst, newSecond));
     }
 }

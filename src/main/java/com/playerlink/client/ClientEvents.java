@@ -53,6 +53,7 @@ public final class ClientEvents {
 
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null || mc.screen != null) return;
+        if (mc.player.isShiftKeyDown()) return;
         if (!mc.player.getMainHandItem().isEmpty()) return;
 
         HitResult hit = mc.hitResult;

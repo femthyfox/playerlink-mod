@@ -8,6 +8,8 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -16,7 +18,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
-import net.neoforged.neoforge.client.event.InputEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
@@ -47,22 +49,18 @@ public final class ClientEvents {
     }
 
     @SubscribeEvent
-    public static void onMouseClick(final InputEvent.MouseButton.Pre event) {
-        if (event.getButton() != GLFW.GLFW_MOUSE_BUTTON_LEFT) return;
-        if (event.getAction() != GLFW.GLFW_PRESS) return;
+    public static void onUseBlock(final PlayerInteractEvent.RightClickBlock event) {
+        if (event.getLevel().isClientSide() == false) return;
+        if (event.getHand() != InteractionHand.MAIN_HAND) return;
+        if (!event.getItemStack().isEmpty()) return;
+        if (event.getEntity().isShiftKeyDown()) return;
 
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.level == null || mc.screen != null) return;
-        if (mc.player.isShiftKeyDown()) return;
-        if (!mc.player.getMainHandItem().isEmpty()) return;
-
-        HitResult hit = mc.hitResult;
-        if (!(hit instanceof BlockHitResult bhr) || hit.getType() != HitResult.Type.BLOCK) return;
-        BlockEntity be = mc.level.getBlockEntity(bhr.getBlockPos());
+        BlockEntity be = event.getLevel().getBlockEntity(event.getPos());
         if (!(be instanceof RedstoneLinkBlockEntity)) return;
 
-        PlayerLinkMod.LOGGER.info("[PlayerLink] Click detected on link at {}, sending packet", bhr.getBlockPos());
-        PacketDistributor.sendToServer(new RequestWhitelistPacket(bhr.getBlockPos()));
+        PlayerLinkMod.LOGGER.info("[PlayerLink] Use-key on link at {}, sending packet", event.getPos());
+        PacketDistributor.sendToServer(new RequestWhitelistPacket(event.getPos()));
+        event.setCancellationResult(InteractionResult.SUCCESS);
         event.setCanceled(true);
     }
 

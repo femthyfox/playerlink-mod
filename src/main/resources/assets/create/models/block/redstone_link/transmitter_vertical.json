@@ -3,9 +3,10 @@
 	"credit": "Made with Blockbench",
 	"parent": "block/block",
 	"textures": {
-		"2": "new models/redstone_bridge",
-		"3": "new models/redstone_antenna"
-	},
+    "0": "create:block/redstone_bridge",
+    "1": "create:block/redstone_antenna",
+    "particle": "create:block/redstone_bridge"
+},
 	"elements": [
 		{
 			"name": "Body",

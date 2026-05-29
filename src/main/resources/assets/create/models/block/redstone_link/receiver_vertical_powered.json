@@ -3,10 +3,10 @@
 	"credit": "Made with Blockbench",
 	"parent": "block/block",
 	"textures": {
-		"0": "redstone_bridge_powered",
-		"1": "redstone_antenna_powered",
-		"particle": "redstone_bridge_powered"
-	},
+    "0": "create:block/redstone_bridge_powered",
+    "1": "create:block/redstone_antenna_powered",
+    "particle": "create:block/redstone_bridge_powered"
+},
 	"elements": [
 		{
 			"name": "Body",

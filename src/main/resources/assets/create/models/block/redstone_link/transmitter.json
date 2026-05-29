@@ -3,10 +3,10 @@
 	"credit": "Made with Blockbench",
 	"parent": "block/block",
 	"textures": {
-		"2": "redstone_bridge",
-		"3": "redstone_antenna",
-		"particle": "create:block/redstone_bridge"
-	},
+    "0": "create:block/redstone_bridge",
+    "1": "create:block/redstone_antenna",
+    "particle": "create:block/redstone_bridge"
+},
 	"elements": [
 		{
 			"name": "Controller",

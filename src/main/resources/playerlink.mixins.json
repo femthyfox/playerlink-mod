@@ -1,3 +1,4 @@
+
 {
   "required": true,
   "package": "com.playerlink.mixin",
@@ -7,7 +8,8 @@
   "mixins": [
     "FrequencyMixin",
     "RedstoneLinkBlockEntityMixin",
-    "LinkBehaviourMixin"
+    "LinkBehaviourMixin",
+    "RedstoneLinkFrequencySlotMixin"
   ],
   "client": [
     "RedstoneLinkRendererMixin"

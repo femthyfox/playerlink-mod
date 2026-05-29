@@ -24,17 +24,17 @@ public abstract class RedstoneLinkFrequencySlotMixin {
 
         Direction facing = state.getValue(RedstoneLinkBlock.FACING);
 
-        if (facing.getAxis().isVertical()) {
-            float z = first ? 4f : 7f;
-            Vec3 location = VecHelper.voxelSpace(8f, 3.01f, z);
-            location = VecHelper.rotateCentered(location, facing == Direction.DOWN ? 180 : 0, Axis.X);
+        if (facing.getAxis().isHorizontal()) {
+            float y = first ? 6f : 3f;
+            Vec3 location = VecHelper.voxelSpace(8f, y, 3.01f);
+            location = playerlink$rotateHorizontally(state, location);
             cir.setReturnValue(location);
             return;
         }
 
-        float y = first ? 4f : 7f;
-        Vec3 location = VecHelper.voxelSpace(8f, y, 3.01f);
-        location = playerlink$rotateHorizontally(state, location);
+        Vec3 location = VecHelper.voxelSpace(8f, 3.01f, 5.5f);
+        if (first) location = location.add(0, 0, 5f / 16f);
+        location = VecHelper.rotateCentered(location, facing == Direction.DOWN ? 180 : 0, Axis.X);
         cir.setReturnValue(location);
     }
 

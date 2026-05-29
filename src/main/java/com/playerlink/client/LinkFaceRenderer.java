@@ -14,7 +14,35 @@ import org.joml.Matrix4f;
 
 import java.util.UUID;
 
+/**
+ * Renders the owner's player face flush against the surface of the Redstone Link block.
+ *
+ * ─── HOW TO TUNE THE FACE POSITION FOR YOUR CUSTOM MODEL ──────────────────────
+ * Once your new BlockBench model is loaded into the game, adjust the constants
+ * in the FACE TUNING block below. All values are in PIXELS (1/16th of a block).
+ *
+ *   FACE_SIZE_PX     → width/height of the rendered face in pixels (8 = half block)
+ *   FACE_OFFSET_U_PX → horizontal slide along the block face (0 = centered)
+ *   FACE_OFFSET_V_PX → vertical slide along the block face   (0 = centered)
+ *   FACE_DEPTH_PX    → how far the face sits ABOVE the block's front surface.
+ *                      (small positive value avoids z-fighting; raise it if your
+ *                       model has a recess where the face should sit deeper.)
+ *   FRONT_FACE_PX    → which slab of the block is the "front face" the player
+ *                      face attaches to. For Create's vanilla model the front
+ *                      panel sits at 3px from the back, so we use 3.
+ *                      If your new model has the panel at a different depth,
+ *                      change this value.
+ * ──────────────────────────────────────────────────────────────────────────────
+ */
 public final class LinkFaceRenderer {
+
+    // ─── FACE TUNING — edit these once your model is ready ───
+    private static final float FACE_SIZE_PX     = 8.0f;
+    private static final float FACE_OFFSET_U_PX = 0.0f;
+    private static final float FACE_OFFSET_V_PX = 0.0f;
+    private static final float FACE_DEPTH_PX    = 0.05f;
+    private static final float FRONT_FACE_PX    = 3.0f;
+    // ──────────────────────────────────────────────────────────
 
     private LinkFaceRenderer() {}
 
@@ -31,42 +59,35 @@ public final class LinkFaceRenderer {
         BlockState state = be.getBlockState();
         Direction facing = state.getValue(RedstoneLinkBlock.FACING);
 
-        pose.pushPose();
+        // Convert pixel units to block units
+        final float size   = FACE_SIZE_PX / 16f;
+        final float offU   = FACE_OFFSET_U_PX / 16f;
+        final float offV   = FACE_OFFSET_V_PX / 16f;
+        final float depth  = FACE_DEPTH_PX / 16f;
+        final float front  = FRONT_FACE_PX / 16f;
 
-        // Position face flat on the block surface, on the opposite side from frequency slots.
-        // Frequency slots are at low Z/Y (~4-7). Face goes at high Z/Y (~11.5), centered.
-        if (facing == Direction.UP) {
-            pose.translate(8f / 16f, 3.5f / 16f, 11.5f / 16f);
-            pose.mulPose(new org.joml.Quaternionf().rotateX((float) -Math.PI / 2f));
-        } else if (facing == Direction.DOWN) {
-            pose.translate(8f / 16f, 12.5f / 16f, 11.5f / 16f);
-            pose.mulPose(new org.joml.Quaternionf().rotateX((float) Math.PI / 2f));
-        } else {
-            // Horizontal facing: face is on a wall.
-            float yawRad = 0f;
-            switch (facing) {
-                case NORTH -> yawRad = (float) Math.PI;
-                case SOUTH -> yawRad = 0f;
-                case WEST  -> yawRad = (float) -Math.PI / 2f;
-                case EAST  -> yawRad = (float)  Math.PI / 2f;
-                default -> {}
-            }
-            pose.translate(0.5f, 0.5f, 0.5f);
-            pose.mulPose(new org.joml.Quaternionf().rotateY(yawRad));
-            pose.translate(0f, 11.5f / 16f - 0.5f, 3.5f / 16f - 0.5f);
+        pose.pushPose();
+        pose.translate(0.5f, 0.5f, 0.5f); // Center on block
+
+        // Rotate so the face lies flat against the block's "front" panel
+        switch (facing) {
+            case UP    -> pose.mulPose(new org.joml.Quaternionf().rotateX((float) -Math.PI / 2f));
+            case DOWN  -> pose.mulPose(new org.joml.Quaternionf().rotateX((float)  Math.PI / 2f));
+            case NORTH -> pose.mulPose(new org.joml.Quaternionf().rotateY((float)  Math.PI));
+            case SOUTH -> { /* default orientation, face points +Z */ }
+            case WEST  -> pose.mulPose(new org.joml.Quaternionf().rotateY((float) -Math.PI / 2f));
+            case EAST  -> pose.mulPose(new org.joml.Quaternionf().rotateY((float)  Math.PI / 2f));
         }
 
-        // Slight lift off the surface to avoid z-fighting with block texture
-        pose.translate(0f, 0f, 0.001f);
+        // Move outward to the front of the panel + slight depth offset to avoid z-fighting
+        pose.translate(offU, offV, (0.5f - front) + depth);
 
-        // Scale to fit ~5 voxels wide on the block face
-        float scale = 5f / 16f;
-        pose.scale(scale, scale, scale);
+        pose.scale(size, size, size);
 
         Matrix4f m = pose.last().pose();
         VertexConsumer vc = buffer.getBuffer(RenderType.entityCutoutNoCull(skin));
 
-        // Base face layer (skin face)
+        // Base face (front of head) — UV [8..16, 8..16] on the 64x64 skin
         float u0 = 8f / 64f, u1 = 16f / 64f;
         float v0 = 8f / 64f, v1 = 16f / 64f;
         addVertex(vc, m, -0.5F, -0.5F, u0, v1, light, overlay);
@@ -74,7 +95,7 @@ public final class LinkFaceRenderer {
         addVertex(vc, m,  0.5F,  0.5F, u1, v0, light, overlay);
         addVertex(vc, m, -0.5F,  0.5F, u0, v0, light, overlay);
 
-        // Hat layer slightly in front
+        // Hat overlay — UV [40..48, 8..16]
         pose.translate(0f, 0f, 0.01f);
         Matrix4f m2 = pose.last().pose();
         float hu0 = 40f / 64f, hu1 = 48f / 64f;

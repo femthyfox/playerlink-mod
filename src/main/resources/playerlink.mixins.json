@@ -7,7 +7,8 @@
   "mixins": [
     "FrequencyMixin",
     "RedstoneLinkBlockEntityMixin",
-    "LinkBehaviourMixin"
+    "LinkBehaviourMixin",
+    "RedstoneLinkFrequencySlotMixin"
   ],
   "client": [
     "RedstoneLinkRendererMixin"

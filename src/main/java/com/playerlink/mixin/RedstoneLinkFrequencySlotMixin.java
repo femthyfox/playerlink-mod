@@ -17,10 +17,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(value = RedstoneLinkFrequencySlot.class, remap = false)
 public abstract class RedstoneLinkFrequencySlotMixin {
 
-    // Both frequency slots are pushed to one side of the block face,
-    // leaving the opposite side free for the player face overlay.
-    // First slot = further from face, Second slot = closer to face.
-
     @Inject(method = "getLocalOffset", at = @At("HEAD"), cancellable = true, remap = false)
     private void playerlink$overrideOffset(LevelAccessor level, BlockPos pos, BlockState state,
                                            CallbackInfoReturnable<Vec3> cir) {
@@ -28,20 +24,21 @@ public abstract class RedstoneLinkFrequencySlotMixin {
 
         Direction facing = state.getValue(RedstoneLinkBlock.FACING);
 
-        // Top/bottom-facing link: slots laid out along Z axis on the visible (Y) face.
-        if (facing.getAxis().isVertical()) {
-            // X centered, Y just above surface, Z packed to lower side
-            float z = first ? 4f : 7f;
-            Vec3 location = VecHelper.voxelSpace(8f, 3.01f, z);
-            location = VecHelper.rotateCentered(location, facing == Direction.DOWN ? 180 : 0, Axis.X);
+        // Wall-mounted (horizontal-facing) link: stack both slots vertically near the BOTTOM
+        // of the visible face, leaving the upper portion free for the player face overlay.
+        if (facing.getAxis().isHorizontal()) {
+            float y = first ? 6f : 3f;   // first slot just above second
+            Vec3 location = VecHelper.voxelSpace(8f, y, 3.01f);
+            location = playerlink$rotateHorizontally(state, location);
             cir.setReturnValue(location);
             return;
         }
 
-        // Horizontal-facing (on a wall): slots laid out along Y axis on the visible face.
-        float y = first ? 4f : 7f;
-        Vec3 location = VecHelper.voxelSpace(8f, y, 3.01f);
-        location = playerlink$rotateHorizontally(state, location);
+        // Top/bottom-facing link: keep Create's default layout for now
+        // (no clear "down" direction on a flat-top face)
+        Vec3 location = VecHelper.voxelSpace(8f, 3.01f, 5.5f);
+        if (first) location = location.add(0, 0, 5f / 16f);
+        location = VecHelper.rotateCentered(location, facing == Direction.DOWN ? 180 : 0, Axis.X);
         cir.setReturnValue(location);
     }
 

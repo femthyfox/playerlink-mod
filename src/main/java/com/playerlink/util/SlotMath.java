@@ -6,52 +6,44 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Shared math for placing the redstone-link slots relative to the block's
- * top-face (top-down) layout.
+ * Geometry for placing redstone-link slots based on a top-down spec from the
+ * user. Coordinates are TREATED AS CENTERS of the slot (not bottom-left).
  *
- * The user provides slot positions as TOP-DOWN coordinates where:
- *   • U (right) — world X on a floor block (0 = left edge, 16 = right edge)
- *   • V (up)    — world Z on a floor block (0 = south/front, 16 = north/back)
- *   • H         — slot height above the block top (3.5px above the 3px plate)
+ * ─── COORDINATE TUNING ────────────────────────────────────────────────────
+ * If the slots end up on the wrong side of the block, flip these toggles:
+ *   FLIP_U → mirrors the "right" axis  (X)
+ *   FLIP_V → mirrors the "up"  axis    (Z)
  *
- * For other facings the position is rotated around the block center so the slot
- * lives on the block's "working face" the same way it would on the floor.
- *
- * ─── EDITABLE SLOT LAYOUT (all in PIXELS, 0..16) ────────────────────────
- * If the user ever wants to move slots, change these numbers.
- *   FIRST_*  → blue frequency slot
- *   SECOND_* → red frequency slot
- *   FACE_*   → GUI-open slot (player face)
- * Coordinates are the CENTER of each slot.
- * ─────────────────────────────────────────────────────────────────────────
+ *   FIRST_U/V    blue frequency slot (center, pixels 0..16)
+ *   SECOND_U/V   red  frequency slot (center)
+ *   FACE_U/V     player-face GUI slot (center) — FACE_SIZE is the square side
+ *   SLOT_HEIGHT  how far ABOVE the block-top surface the slot floats (px)
+ * ──────────────────────────────────────────────────────────────────────────
  */
 public final class SlotMath {
 
-    // ── Frequency slot 1 (blue) — bottom-left (10, 3.5), 4x4 → center (12, 5.5)
-    public static final float FIRST_U = 12.0f;
-    public static final float FIRST_V = 5.5f;
+    // Flip toggles — try one or both if the slots end up mirrored in-game
+    public static final boolean FLIP_U = false;
+    public static final boolean FLIP_V = true;   // user's "up" in BB top-down = north
 
-    // ── Frequency slot 2 (red) — bottom-left (10, 8.5), 4x4 → center (12, 10.5)
-    public static final float SECOND_U = 12.0f;
-    public static final float SECOND_V = 10.5f;
+    // Frequency slots (CENTER positions in pixels)
+    public static final float FIRST_U  = 10.0f;
+    public static final float FIRST_V  = 3.5f;
+    public static final float SECOND_U = 10.0f;
+    public static final float SECOND_V = 8.5f;
 
-    // ── Face / GUI slot — bottom-left (3, 5.5), 5x5 → center (5.5, 8.0)
-    public static final float FACE_U = 5.5f;
-    public static final float FACE_V = 8.0f;
+    // Face / GUI slot (CENTER position, size in pixels)
+    public static final float FACE_U    = 3.0f;
+    public static final float FACE_V    = 5.5f;
     public static final float FACE_SIZE = 5.0f;
 
-    // ── How high above the block-top the slot floats (just above the 3px plate)
     public static final float SLOT_HEIGHT_PX = 3.5f;
 
     private SlotMath() {}
 
-    /**
-     * Convert TOP-DOWN (U, V) slot coordinates into a block-local Vec3
-     * (0..1 each axis) based on the block's facing.
-     */
     public static Vec3 localCenter(Direction facing, float uPx, float vPx) {
-        double u = uPx / 16.0;
-        double v = vPx / 16.0;
+        double u = (FLIP_U ? (16f - uPx) : uPx) / 16.0;
+        double v = (FLIP_V ? (16f - vPx) : vPx) / 16.0;
         double h = SLOT_HEIGHT_PX / 16.0;
         return switch (facing) {
             case UP    -> new Vec3(u, h, v);
@@ -63,14 +55,10 @@ public final class SlotMath {
         };
     }
 
-    /**
-     * Build an AABB in WORLD coordinates around the face slot, used for hover
-     * detection and click testing.
-     */
     public static AABB faceSlotWorldAABB(BlockPos pos, Direction facing) {
         Vec3 center = localCenter(facing, FACE_U, FACE_V);
         double half = (FACE_SIZE / 2.0) / 16.0;
-        double thick = 1.0 / 16.0; // depth of the slot box
+        double thick = 1.0 / 16.0;
         Vec3 origin = Vec3.atLowerCornerOf(pos);
 
         double minX, maxX, minY, maxY, minZ, maxZ;
@@ -85,7 +73,7 @@ public final class SlotMath {
                 minY = center.y - half; maxY = center.y + half;
                 minZ = center.z - thick / 2; maxZ = center.z + thick / 2;
             }
-            default -> { // EAST, WEST
+            default -> {
                 minX = center.x - thick / 2; maxX = center.x + thick / 2;
                 minY = center.y - half; maxY = center.y + half;
                 minZ = center.z - half; maxZ = center.z + half;
@@ -96,10 +84,6 @@ public final class SlotMath {
                 origin.x + maxX, origin.y + maxY, origin.z + maxZ);
     }
 
-    /**
-     * Is the given world-space hit location inside the face slot's bounds?
-     * Adds a small slack so grazing hits still count.
-     */
     public static boolean isFaceSlotHit(BlockPos pos, Direction facing, Vec3 hitLocation) {
         return faceSlotWorldAABB(pos, facing).inflate(0.01).contains(hitLocation);
     }

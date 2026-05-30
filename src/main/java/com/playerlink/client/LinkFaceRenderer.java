@@ -28,16 +28,31 @@ public final class LinkFaceRenderer {
 
     private LinkFaceRenderer() {}
 
+    private static long playerlink$lastDiagLog = 0L;
+
     public static void render(RedstoneLinkBlockEntity be,
                               PoseStack pose,
                               MultiBufferSource buffer,
                               int light,
                               int overlay) {
+        // ── Diagnostic: log once every 5 seconds so we can see if this method
+        //    is being called at all. Look for "[PlayerLink][face-render]" in latest.log
+        long now = System.currentTimeMillis();
+        if (now - playerlink$lastDiagLog > 5000L) {
+            playerlink$lastDiagLog = now;
+            com.playerlink.PlayerLinkMod.LOGGER.info(
+                "[PlayerLink][face-render] called for {}  (owned={}, owner={})",
+                be.getBlockPos(),
+                be instanceof IOwnedLink,
+                (be instanceof IOwnedLink io) ? io.playerlink$getOwner() : "n/a");
+        }
+
         if (!(be instanceof IOwnedLink owned)) return;
         UUID owner = owned.playerlink$getOwner();
         if (owner == null) return;
 
         ResourceLocation skin = SkinCache.get(owner, null);
+        if (skin == null) return;
         BlockState state = be.getBlockState();
         Direction facing = state.getValue(RedstoneLinkBlock.FACING);
         BlockPos pos = be.getBlockPos();

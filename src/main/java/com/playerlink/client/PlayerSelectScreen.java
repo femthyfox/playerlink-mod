@@ -210,14 +210,12 @@ public class PlayerSelectScreen extends Screen {
         // Stone panel
         drawStonePanel(g, panelX, panelY, panelW, panelH);
 
-        // Spruce title bar (lighter tone)
-        int titleBarH = 20;
-        int tbx = panelX + 4, tby = panelY + 4;
-        int tbw = panelW - 8;
-        g.fillGradient(tbx, tby, tbx + tbw, tby + titleBarH, COL_SPRUCE_LIGHT, COL_SPRUCE_HI);
-        for (int i = 1; i < 4; i++) {
-            int gy = tby + (titleBarH * i / 4);
-            g.fill(tbx, gy, tbx + tbw, gy + 1, COL_SPRUCE);
+        // Spruce wood — significantly brighter
+    private static final int COL_SPRUCE        = 0xFFB07B43;
+    private static final int COL_SPRUCE_HI     = 0xFFCB9558;
+    private static final int COL_SPRUCE_DARK   = 0xFF7A532A;
+    private static final int COL_SPRUCE_LIGHT  = 0xFFE0B581;
+    private static final int COL_SPRUCE_FACE_WELL = 0xFFE8E0CC;
         }
         g.fill(tbx, tby, tbx + tbw, tby + 1, 0xFFD9B589);
         g.fill(tbx, tby + titleBarH - 1, tbx + tbw, tby + titleBarH, COL_SPRUCE_DARK);
@@ -309,7 +307,9 @@ public class PlayerSelectScreen extends Screen {
 
             ResourceLocation skin = SkinCache.get(entry.uuid(), entry.name());
             RenderSystem.enableBlend();
+            RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
             PlayerFaceRenderer.draw(g, skin, faceX, faceY, FACE_SIZE);
+            RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
             RenderSystem.disableBlend();
 
             String name = entry.name();

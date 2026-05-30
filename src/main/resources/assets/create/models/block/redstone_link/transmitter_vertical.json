@@ -3,9 +3,9 @@
 	"credit": "Made with Blockbench",
 	"parent": "block/block",
 	"textures": {
-		"0": "redstone_bridge",
-		"1": "redstone_antenna",
-		"particle": "redstone_bridge"
+		"0": "create:block/redstone_bridge",
+		"1": "create:block/redstone_antenna",
+		"particle": "create:block/redstone_bridge"
 	},
 	"elements": [
 		{

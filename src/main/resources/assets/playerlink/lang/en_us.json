@@ -13,6 +13,8 @@
   "playerlink.message.no_link": "You must be looking at a Redstone Link block",
   "playerlink.message.not_whitelisted": "That player is not whitelisted",
   "playerlink.tooltip.shift_right_click": "Sneak + Right-click with empty hand to set owner",
+  "playerlink.face_slot.title": "Player Frequency",
+  "playerlink.face_slot.sub": "Click to open",
   "key.playerlink.open_owner_gui": "Open Redstone Link Owner GUI",
   "key.categories.playerlink": "Player-Linked Redstone"
 }

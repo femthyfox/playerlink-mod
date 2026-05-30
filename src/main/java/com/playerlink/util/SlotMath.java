@@ -18,8 +18,8 @@ public final class SlotMath {
 
     public static final float FREQ_HEIGHT_VERT_PX  = 2.8f;
     public static final float FACE_HEIGHT_VERT_PX  = 3.8f;
-    public static final float FREQ_HEIGHT_HORIZ_PX = 7.5f;
-    public static final float FACE_HEIGHT_HORIZ_PX = 12.5f;  // ← pushed closer to wall plate
+    public static final float FREQ_HEIGHT_HORIZ_PX = 12.5f;  // ← raised from 7.5
+    public static final float FACE_HEIGHT_HORIZ_PX = 12.5f;
 
     private SlotMath() {}
 

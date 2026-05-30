@@ -34,7 +34,7 @@ public class PlayerSelectScreen extends Screen {
     private static final int COL_SPRUCE_HI        = 0xFFAD7D45;
     private static final int COL_SPRUCE_DARK      = 0xFF5A3E1B;
     private static final int COL_SPRUCE_LIGHT     = 0xFFC49560;
-    private static final int COL_SPRUCE_FACE_WELL = 0xFF6B4A2A;
+    private static final int COL_SPRUCE_FACE_WELL = 0xFFB58A52;
 
     private static final int COL_BRASS_TOP     = 0xFFE6C572;
     private static final int COL_BRASS_BOT     = 0xFFB68A3F;
@@ -85,8 +85,8 @@ public class PlayerSelectScreen extends Screen {
 
     @Override
     protected void init() {
-        panelW = Math.min(460, width - PANEL_MARGIN * 2);
-        panelH = Math.min(360, height - PANEL_MARGIN * 2);
+        panelW = Math.min(440, width - PANEL_MARGIN * 2);
+        panelH = Math.min(370, height - PANEL_MARGIN * 2);
         panelX = (width - panelW) / 2;
         panelY = (height - panelH) / 2;
 
@@ -94,7 +94,7 @@ public class PlayerSelectScreen extends Screen {
         int innerRight = panelX + panelW - 12;
         int innerWidth = innerRight - innerLeft;
 
-        int searchY = panelY + 32;
+        int searchY = panelY + 50;
         searchBox = new EditBox(font, innerLeft + 1, searchY, innerWidth - 2, 16,
                 Component.translatable("playerlink.gui.select_owner.search"));
         searchBox.setHint(Component.translatable("playerlink.gui.select_owner.search")
@@ -105,25 +105,25 @@ public class PlayerSelectScreen extends Screen {
         gridX = innerLeft;
         gridY = searchY + 22;
         gridW = innerWidth;
-        gridH = panelH - (gridY - panelY) - 38;
+        gridH = panelH - (gridY - panelY) - 40;
 
-        int btnY = panelY + panelH - 28;
-        int btnW = 100, gap = 8, totalW = btnW * 3 + gap * 2;
+        int btnY = panelY + panelH - 26;
+        int btnW = 80, gap = 6, totalW = btnW * 3 + gap * 2;
         int btnLeft = panelX + (panelW - totalW) / 2;
 
-        assignButton = new BrassButton(btnLeft, btnY, btnW, 20,
+        assignButton = new BrassButton(btnLeft, btnY, btnW, 18,
                 Component.translatable("playerlink.gui.select_owner.button.assign"),
                 b -> assignSelected());
         assignButton.active = selectedUuid != null;
         addRenderableWidget(assignButton);
 
-        clearButton = new BrassButton(btnLeft + btnW + gap, btnY, btnW, 20,
+        clearButton = new BrassButton(btnLeft + btnW + gap, btnY, btnW, 18,
                 Component.translatable("playerlink.gui.select_owner.button.clear"),
                 b -> { PacketDistributor.sendToServer(new SetOwnerPacket(blockPos, Optional.empty())); onClose(); });
         clearButton.active = currentOwner != null;
         addRenderableWidget(clearButton);
 
-        closeButton = new BrassButton(btnLeft + (btnW + gap) * 2, btnY, btnW, 20,
+        closeButton = new BrassButton(btnLeft + (btnW + gap) * 2, btnY, btnW, 18,
                 Component.translatable("playerlink.gui.select_owner.button.close"),
                 b -> onClose());
         addRenderableWidget(closeButton);
@@ -204,35 +204,46 @@ public class PlayerSelectScreen extends Screen {
     public void render(GuiGraphics g, int mouseX, int mouseY, float pt) {
         renderBackground(g, mouseX, mouseY, pt);
 
+        // Drop shadow
         g.fill(panelX + 3, panelY + 4, panelX + panelW + 3, panelY + panelH + 4, 0x90000000);
 
+        // Stone panel
         drawStonePanel(g, panelX, panelY, panelW, panelH);
 
+        // Spruce title bar (lighter tone)
         int titleBarH = 20;
         int tbx = panelX + 4, tby = panelY + 4;
         int tbw = panelW - 8;
-        g.fillGradient(tbx, tby, tbx + tbw, tby + titleBarH, COL_SPRUCE_HI, COL_SPRUCE);
+        g.fillGradient(tbx, tby, tbx + tbw, tby + titleBarH, COL_SPRUCE_LIGHT, COL_SPRUCE_HI);
         for (int i = 1; i < 4; i++) {
             int gy = tby + (titleBarH * i / 4);
-            g.fill(tbx, gy, tbx + tbw, gy + 1, COL_SPRUCE_DARK);
+            g.fill(tbx, gy, tbx + tbw, gy + 1, COL_SPRUCE);
         }
-        g.fill(tbx, tby, tbx + tbw, tby + 1, COL_SPRUCE_LIGHT);
+        g.fill(tbx, tby, tbx + tbw, tby + 1, 0xFFD9B589);
         g.fill(tbx, tby + titleBarH - 1, tbx + tbw, tby + titleBarH, COL_SPRUCE_DARK);
 
+        // Title text — left aligned, no overlap
         g.drawString(font, title, panelX + 12, panelY + 10, COL_TEXT_LIGHT, true);
+
+        // Owner-info strip BELOW the title bar
+        int stripY = tby + titleBarH + 2;
+        int stripH = 14;
+        drawInsetBox(g, tbx, stripY, tbw, stripH, 0xFF6F6F6F, COL_STONE_TOP);
 
         Component cur = (selectedUuid == null)
                 ? Component.translatable("playerlink.gui.select_owner.current.none")
                 : Component.translatable("playerlink.gui.select_owner.current",
                         selectedName == null ? selectedUuid.toString().substring(0, 8) : selectedName);
-        int curColor = selectedUuid == null ? 0xFFCCCCCC : COL_BRASS_HI;
-        int curX = panelX + panelW - 12 - font.width(cur);
-        g.drawString(font, cur, curX, panelY + 10, curColor, true);
+        int curColor = selectedUuid == null ? 0xFF555555 : 0xFFFFFFFF;
+        int curX = panelX + (panelW - font.width(cur)) / 2;
+        g.drawString(font, cur, curX, stripY + 3, curColor, selectedUuid != null);
 
+        // Search frame
         int sx = searchBox.getX() - 2, sy = searchBox.getY() - 2;
         int sw = searchBox.getWidth() + 4, sh = 20;
         drawInsetBox(g, sx, sy, sw, sh, 0xFF2A2A2A, 0xFFB0B0B0);
 
+        // Grid background + decorative pattern
         drawInsetBox(g, gridX - 4, gridY - 4, gridW + 8, gridH + 8, 0xFF6F6F6F, COL_STONE_TOP);
         drawGridDecor(g, gridX - 4, gridY - 4, gridW + 8, gridH + 8);
 
@@ -246,11 +257,11 @@ public class PlayerSelectScreen extends Screen {
             drawTileGrid(g, mouseX, mouseY);
         }
 
+        // Hint — white with shadow for visibility
         Component hint = Component.literal("Click a player to select  ·  Click again to confirm");
-        g.drawString(font, hint,
-                panelX + (panelW - font.width(hint)) / 2,
-                panelY + panelH - 40,
-                COL_TEXT_DARK, false);
+        int hintX = panelX + (panelW - font.width(hint)) / 2;
+        int hintY = panelY + panelH - 40;
+        g.drawString(font, hint, hintX, hintY, 0xFFFFFFFF, true);
 
         super.render(g, mouseX, mouseY, pt);
     }
@@ -292,7 +303,7 @@ public class PlayerSelectScreen extends Screen {
 
             int faceX = tx + (TILE_W - FACE_SIZE) / 2;
             int faceY = ty + 6;
-            // Lighter face well — 2-px bevel so face stands out
+            // Lighter face well — 2-px bevel so face really pops
             g.fill(faceX - 2, faceY - 2, faceX + FACE_SIZE + 2, faceY + FACE_SIZE + 2, COL_SPRUCE_DARK);
             g.fill(faceX - 1, faceY - 1, faceX + FACE_SIZE + 1, faceY + FACE_SIZE + 1, COL_SPRUCE_FACE_WELL);
 
@@ -359,7 +370,6 @@ public class PlayerSelectScreen extends Screen {
         g.fill(x + w - 1, y, x + w, y + h, lightColor);
     }
 
-    /** Decorative stone-brick pattern + brass rivet corners. */
     private void drawGridDecor(GuiGraphics g, int x, int y, int w, int h) {
         int brickW = 16, brickH = 6;
         int xStart = x + 2, yStart = y + 2;

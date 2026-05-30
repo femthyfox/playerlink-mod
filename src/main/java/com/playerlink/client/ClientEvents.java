@@ -3,21 +3,25 @@ package com.playerlink.client;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.playerlink.PlayerLinkMod;
 import com.playerlink.network.RequestWhitelistPacket;
+import com.playerlink.util.SlotMath;
+import com.simibubi.create.content.redstone.link.RedstoneLinkBlock;
 import com.simibubi.create.content.redstone.link.RedstoneLinkBlockEntity;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
@@ -41,35 +45,52 @@ public final class ClientEvents {
     @SubscribeEvent
     public static void onClientTick(final ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.level == null || mc.screen != null) return;
+        if (mc.player == null || mc.level == null) {
+            LinkFaceRenderer.HOVERED_FACE_SLOT_POS = null;
+            return;
+        }
 
+        BlockPos hovered = null;
+        HitResult hit = mc.hitResult;
+        if (hit instanceof BlockHitResult bhr && hit.getType() == HitResult.Type.BLOCK) {
+            BlockEntity be = mc.level.getBlockEntity(bhr.getBlockPos());
+            if (be instanceof RedstoneLinkBlockEntity) {
+                BlockState state = be.getBlockState();
+                Direction facing = state.getValue(RedstoneLinkBlock.FACING);
+                if (SlotMath.isFaceSlotHit(bhr.getBlockPos(), facing, bhr.getLocation())) {
+                    hovered = bhr.getBlockPos();
+                }
+            }
+        }
+        LinkFaceRenderer.HOVERED_FACE_SLOT_POS = hovered;
+
+        if (mc.screen != null) return;
         while (OPEN_OWNER_GUI.consumeClick()) {
-            tryOpenOwnerGui(mc, mc.player, mc.level);
+            if (hovered != null) {
+                PacketDistributor.sendToServer(new RequestWhitelistPacket(hovered));
+            }
         }
     }
 
     @SubscribeEvent
     public static void onUseBlock(final PlayerInteractEvent.RightClickBlock event) {
-        if (event.getLevel().isClientSide() == false) return;
+        if (!event.getLevel().isClientSide()) return;
         if (event.getHand() != InteractionHand.MAIN_HAND) return;
-        if (!event.getItemStack().isEmpty()) return;
         if (event.getEntity().isShiftKeyDown()) return;
 
         BlockEntity be = event.getLevel().getBlockEntity(event.getPos());
         if (!(be instanceof RedstoneLinkBlockEntity)) return;
 
-        PlayerLinkMod.LOGGER.info("[PlayerLink] Use-key on link at {}, sending packet", event.getPos());
+        BlockState state = be.getBlockState();
+        Direction facing = state.getValue(RedstoneLinkBlock.FACING);
+        Vec3 hitVec = event.getHitVec().getLocation();
+        if (!SlotMath.isFaceSlotHit(event.getPos(), facing, hitVec)) return;
+
+        if (!event.getItemStack().isEmpty()) return;
+
+        PlayerLinkMod.LOGGER.info("[PlayerLink] Face slot clicked at {}, opening GUI", event.getPos());
         PacketDistributor.sendToServer(new RequestWhitelistPacket(event.getPos()));
         event.setCancellationResult(InteractionResult.SUCCESS);
         event.setCanceled(true);
-    }
-
-    private static void tryOpenOwnerGui(Minecraft mc, LocalPlayer player, ClientLevel level) {
-        HitResult hit = mc.hitResult;
-        if (!(hit instanceof BlockHitResult bhr) || hit.getType() != HitResult.Type.BLOCK) return;
-        BlockEntity be = level.getBlockEntity(bhr.getBlockPos());
-        if (!(be instanceof RedstoneLinkBlockEntity)) return;
-        PlayerLinkMod.LOGGER.info("[PlayerLink] K-key on link at {}, sending packet", bhr.getBlockPos());
-        PacketDistributor.sendToServer(new RequestWhitelistPacket(bhr.getBlockPos()));
     }
 }

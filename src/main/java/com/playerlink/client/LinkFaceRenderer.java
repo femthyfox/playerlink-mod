@@ -29,8 +29,6 @@ public final class LinkFaceRenderer {
                               MultiBufferSource buffer,
                               int light,
                               int overlay) {
-        // Diagnostic: prove this method is being reached.
-        // Look for "[PlayerLink][face-render]" in your latest.log every ~5s
         long now = System.currentTimeMillis();
         if (now - playerlink$lastDiagLog > 5000L) {
             playerlink$lastDiagLog = now;
@@ -80,14 +78,14 @@ public final class LinkFaceRenderer {
     }
 
     private static void applyFaceTransform(PoseStack pose, Direction facing) {
-        var center = SlotMath.localCenter(facing, SlotMath.FACE_U, SlotMath.FACE_V);
+        var center = SlotMath.localFaceCenter(facing);
         pose.translate(center.x, center.y, center.z);
 
         switch (facing) {
             case UP    -> pose.mulPose(new org.joml.Quaternionf().rotateX((float) -Math.PI / 2f));
             case DOWN  -> pose.mulPose(new org.joml.Quaternionf().rotateX((float)  Math.PI / 2f));
             case NORTH -> pose.mulPose(new org.joml.Quaternionf().rotateY((float)  Math.PI));
-            case SOUTH -> { /* default orientation, face points +Z */ }
+            case SOUTH -> { }
             case WEST  -> pose.mulPose(new org.joml.Quaternionf().rotateY((float) -Math.PI / 2f));
             case EAST  -> pose.mulPose(new org.joml.Quaternionf().rotateY((float)  Math.PI / 2f));
         }

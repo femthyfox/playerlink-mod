@@ -18,21 +18,30 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class RedstoneLinkFrequencySlotMixin {
 
     @Inject(method = "getLocalOffset", at = @At("HEAD"), cancellable = true, remap = false)
-    private void playerlink$overrideOffset(LevelAccessor level,
-                                           BlockPos pos,
-                                           BlockState state,
+    private void playerlink$overrideOffset(LevelAccessor level, BlockPos pos, BlockState state,
                                            CallbackInfoReturnable<Vec3> cir) {
         try {
             boolean isFirst = playerlink$resolveFirst();
             Direction facing = state.getValue(RedstoneLinkBlock.FACING);
-
             float u = isFirst ? SlotMath.FIRST_U  : SlotMath.SECOND_U;
             float v = isFirst ? SlotMath.FIRST_V  : SlotMath.SECOND_V;
-
-            Vec3 result = SlotMath.localCenter(facing, u, v);
-            cir.setReturnValue(result);
+            cir.setReturnValue(SlotMath.localFreqCenter(facing, u, v));
         } catch (Throwable t) {
-            // Silently fall through to Create's original positioning
+            // fall through to Create's default
+        }
+    }
+
+    @Inject(method = "testHit", at = @At("HEAD"), cancellable = true, remap = false)
+    private void playerlink$overrideTestHit(LevelAccessor level, BlockPos pos, BlockState state,
+                                            Vec3 localHit, CallbackInfoReturnable<Boolean> cir) {
+        try {
+            boolean isFirst = playerlink$resolveFirst();
+            Direction facing = state.getValue(RedstoneLinkBlock.FACING);
+            double dist = SlotMath.freqSlotPlanarDistance(facing, isFirst, localHit);
+            double tolerance = 2.5 / 16.0;
+            cir.setReturnValue(dist < tolerance);
+        } catch (Throwable t) {
+            // fall through
         }
     }
 

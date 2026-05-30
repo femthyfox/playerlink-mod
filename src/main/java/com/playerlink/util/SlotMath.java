@@ -7,27 +7,28 @@ import net.minecraft.world.phys.Vec3;
 
 public final class SlotMath {
 
-    // ── Frequency slot 1 (blue) — bottom-left (10, 3.5), 4x4 → center (12, 5.5)
-    public static final float FIRST_U = 12.0f;
-    public static final float FIRST_V = 5.5f;
+    // ── COORDINATE FLIP TOGGLES — try one or both if slots end up mirrored
+    public static final boolean FLIP_U = false;  // mirror "right" axis
+    public static final boolean FLIP_V = true;   // mirror "up"    axis  (user's "up" = north in BB top-down)
 
-    // ── Frequency slot 2 (red) — bottom-left (10, 8.5), 4x4 → center (12, 10.5)
-    public static final float SECOND_U = 12.0f;
-    public static final float SECOND_V = 10.5f;
+    // ── Frequency slots (CENTER positions in pixels 0..16)
+    public static final float FIRST_U  = 10.0f;
+    public static final float FIRST_V  = 3.5f;
+    public static final float SECOND_U = 10.0f;
+    public static final float SECOND_V = 8.5f;
 
-    // ── Face / GUI slot — bottom-left (3, 5.5), 5x5 → center (5.5, 8.0)
-    public static final float FACE_U = 5.5f;
-    public static final float FACE_V = 8.0f;
+    // ── Face / GUI slot (CENTER position)
+    public static final float FACE_U    = 3.0f;
+    public static final float FACE_V    = 5.5f;
     public static final float FACE_SIZE = 5.0f;
 
-    // ── How high above the block-top the slot floats (just above the 3px plate)
     public static final float SLOT_HEIGHT_PX = 3.5f;
 
     private SlotMath() {}
 
     public static Vec3 localCenter(Direction facing, float uPx, float vPx) {
-        double u = uPx / 16.0;
-        double v = vPx / 16.0;
+        double u = (FLIP_U ? (16f - uPx) : uPx) / 16.0;
+        double v = (FLIP_V ? (16f - vPx) : vPx) / 16.0;
         double h = SLOT_HEIGHT_PX / 16.0;
         return switch (facing) {
             case UP    -> new Vec3(u, h, v);

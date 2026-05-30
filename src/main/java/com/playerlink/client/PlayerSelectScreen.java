@@ -40,11 +40,11 @@ public class PlayerSelectScreen extends Screen {
     private static final int COL_STONE_SHADOW  = 0xFF1F1F1F;
 
     // Spruce wood
-    private static final int COL_SPRUCE        = 0xFF8C6739;
-    private static final int COL_SPRUCE_HI     = 0xFFAD7D45;
-    private static final int COL_SPRUCE_DARK   = 0xFF5A3E1B;
-    private static final int COL_SPRUCE_LIGHT  = 0xFFC49560;
-    private static final int COL_SPRUCE_FACE_WELL = 0xFFB58A52;
+    private static final int COL_SPRUCE        = 0xFFB07B43;
+    private static final int COL_SPRUCE_HI     = 0xFFCB9558;
+    private static final int COL_SPRUCE_DARK   = 0xFF7A532A;
+    private static final int COL_SPRUCE_LIGHT  = 0xFFE0B581;
+    private static final int COL_SPRUCE_FACE_WELL = 0xFFE8E0CC;
 
     // Brass (buttons)
     private static final int COL_BRASS_TOP     = 0xFFE6C572;
@@ -332,7 +332,9 @@ public class PlayerSelectScreen extends Screen {
 
             ResourceLocation skin = SkinCache.get(entry.uuid(), entry.name());
             RenderSystem.enableBlend();
+            RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
             PlayerFaceRenderer.draw(g, skin, faceX, faceY, FACE_SIZE);
+            RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
             RenderSystem.disableBlend();
 
             // Name truncation

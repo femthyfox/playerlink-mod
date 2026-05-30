@@ -23,26 +23,36 @@ import java.util.UUID;
 
 public class PlayerSelectScreen extends Screen {
 
-    private static final int COL_BG_DIM       = 0xC8000000;
-    private static final int COL_PANEL_SHADOW = 0xFF1A0E05;
-    private static final int COL_PANEL_BORDER = 0xFF3A2412;
-    private static final int COL_PANEL_LIGHT  = 0xFFDFC79A;
-    private static final int COL_PANEL_DARK   = 0xFFB59669;
-    private static final int COL_TITLE_BAR    = 0xFF5D3927;
-    private static final int COL_TITLE_HI     = 0xFF7A4A33;
-    private static final int COL_TILE_BG      = 0xFFA88B5C;
-    private static final int COL_TILE_BG_HI   = 0xFFC2A271;
-    private static final int COL_TILE_BORDER  = 0xFF4A2F1A;
-    private static final int COL_TILE_SELECT  = 0xFFFFD86A;
-    private static final int COL_TILE_CURRENT = 0xFF7BC04A;
-    private static final int COL_TEXT_DARK    = 0xFF2B1808;
-    private static final int COL_TEXT_LIGHT   = 0xFFFFE9C2;
-    private static final int COL_ACCENT_GOLD  = 0xFFFFD86A;
+    // ─── PALETTE ───────────────────────────────────────────────────────────
+    private static final int COL_BG_DIM        = 0xB0000000;
 
-    private static final int FACE_SIZE   = 32;
-    private static final int TILE_W      = 56;
-    private static final int TILE_H      = 60;
-    private static final int TILE_PAD    = 6;
+    private static final int COL_STONE_TOP     = 0xFFCFCFCF;
+    private static final int COL_STONE_BOT     = 0xFF8C8C8C;
+    private static final int COL_STONE_BORDER  = 0xFF3D3D3D;
+    private static final int COL_STONE_SHADOW  = 0xFF1F1F1F;
+
+    private static final int COL_SPRUCE        = 0xFF6B4A2A;
+    private static final int COL_SPRUCE_HI     = 0xFF8A6238;
+    private static final int COL_SPRUCE_DARK   = 0xFF3F2916;
+    private static final int COL_SPRUCE_LIGHT  = 0xFFA37B49;
+
+    private static final int COL_BRASS_TOP     = 0xFFE6C572;
+    private static final int COL_BRASS_BOT     = 0xFFB68A3F;
+    private static final int COL_BRASS_BORDER  = 0xFF5A3E1B;
+    private static final int COL_BRASS_HI      = 0xFFFFE49A;
+
+    private static final int COL_REDSTONE      = 0xFFB02B2B;
+    private static final int COL_REDSTONE_HI   = 0xFFE03A3A;
+
+    private static final int COL_TEXT_DARK     = 0xFF1A0F05;
+    private static final int COL_TEXT_LIGHT    = 0xFFFFF5DC;
+    private static final int COL_TEXT_MUTED    = 0xFF555555;
+
+    // ─── LAYOUT ───────────────────────────────────────────────────────────
+    private static final int FACE_SIZE    = 32;
+    private static final int TILE_W       = 56;
+    private static final int TILE_H       = 60;
+    private static final int TILE_PAD     = 6;
     private static final int PANEL_MARGIN = 24;
 
     private final BlockPos blockPos;
@@ -51,7 +61,7 @@ public class PlayerSelectScreen extends Screen {
     private List<WhitelistResponsePacket.Entry> filtered;
 
     private EditBox searchBox;
-    private Button assignButton, clearButton, closeButton;
+    private BrassButton assignButton, clearButton, closeButton;
 
     @Nullable private UUID selectedUuid;
     @Nullable private String selectedName;
@@ -100,27 +110,24 @@ public class PlayerSelectScreen extends Screen {
         gridH = panelH - (gridY - panelY) - 38;
 
         int btnY = panelY + panelH - 28;
-        int btnW = 100, gap = 6, totalW = btnW * 3 + gap * 2;
+        int btnW = 100, gap = 8, totalW = btnW * 3 + gap * 2;
         int btnLeft = panelX + (panelW - totalW) / 2;
 
-        assignButton = Button.builder(
+        assignButton = new BrassButton(btnLeft, btnY, btnW, 20,
                 Component.translatable("playerlink.gui.select_owner.button.assign"),
-                b -> assignSelected())
-                .pos(btnLeft, btnY).size(btnW, 20).build();
+                b -> assignSelected());
         assignButton.active = selectedUuid != null;
         addRenderableWidget(assignButton);
 
-        clearButton = Button.builder(
+        clearButton = new BrassButton(btnLeft + btnW + gap, btnY, btnW, 20,
                 Component.translatable("playerlink.gui.select_owner.button.clear"),
-                b -> { PacketDistributor.sendToServer(new SetOwnerPacket(blockPos, Optional.empty())); onClose(); })
-                .pos(btnLeft + btnW + gap, btnY).size(btnW, 20).build();
+                b -> { PacketDistributor.sendToServer(new SetOwnerPacket(blockPos, Optional.empty())); onClose(); });
         clearButton.active = currentOwner != null;
         addRenderableWidget(clearButton);
 
-        closeButton = Button.builder(
+        closeButton = new BrassButton(btnLeft + (btnW + gap) * 2, btnY, btnW, 20,
                 Component.translatable("playerlink.gui.select_owner.button.close"),
-                b -> onClose())
-                .pos(btnLeft + (btnW + gap) * 2, btnY).size(btnW, 20).build();
+                b -> onClose());
         addRenderableWidget(closeButton);
     }
 
@@ -199,30 +206,39 @@ public class PlayerSelectScreen extends Screen {
     public void render(GuiGraphics g, int mouseX, int mouseY, float pt) {
         renderBackground(g, mouseX, mouseY, pt);
 
-        g.fill(panelX + 4, panelY + 5, panelX + panelW + 4, panelY + panelH + 5, 0x80000000);
+        // Drop shadow under panel
+        g.fill(panelX + 3, panelY + 4, panelX + panelW + 3, panelY + panelH + 4, 0x90000000);
 
-        drawBeveledPanel(g, panelX, panelY, panelW, panelH, COL_PANEL_BORDER, COL_PANEL_LIGHT, COL_PANEL_DARK);
+        // Stone panel
+        drawStonePanel(g, panelX, panelY, panelW, panelH);
 
-        int titleBarH = 18;
-        g.fill(panelX + 4, panelY + 4, panelX + panelW - 4, panelY + 4 + titleBarH, COL_TITLE_BAR);
-        g.fill(panelX + 4, panelY + 4, panelX + panelW - 4, panelY + 5, COL_TITLE_HI);
-        g.fill(panelX + 4, panelY + 4 + titleBarH - 1, panelX + panelW - 4, panelY + 4 + titleBarH, 0xFF2A1810);
+        // Spruce title bar
+        int titleBarH = 20;
+        int tbx = panelX + 4, tby = panelY + 4;
+        int tbw = panelW - 8;
+        g.fillGradient(tbx, tby, tbx + tbw, tby + titleBarH, COL_SPRUCE_HI, COL_SPRUCE);
+        for (int i = 1; i < 4; i++) {
+            int gy = tby + (titleBarH * i / 4);
+            g.fill(tbx, gy, tbx + tbw, gy + 1, COL_SPRUCE_DARK);
+        }
+        g.fill(tbx, tby, tbx + tbw, tby + 1, COL_SPRUCE_LIGHT);
+        g.fill(tbx, tby + titleBarH - 1, tbx + tbw, tby + titleBarH, COL_SPRUCE_DARK);
 
-        g.drawString(font, title, panelX + 12, panelY + 9, COL_TEXT_LIGHT, true);
+        g.drawString(font, title, panelX + 12, panelY + 10, COL_TEXT_LIGHT, true);
 
         Component cur = (selectedUuid == null)
                 ? Component.translatable("playerlink.gui.select_owner.current.none")
                 : Component.translatable("playerlink.gui.select_owner.current",
                         selectedName == null ? selectedUuid.toString().substring(0, 8) : selectedName);
-        int curColor = selectedUuid == null ? 0xFFB0B0B0 : COL_ACCENT_GOLD;
+        int curColor = selectedUuid == null ? 0xFFCCCCCC : COL_BRASS_HI;
         int curX = panelX + panelW - 12 - font.width(cur);
-        g.drawString(font, cur, curX, panelY + 9, curColor, true);
+        g.drawString(font, cur, curX, panelY + 10, curColor, true);
 
         int sx = searchBox.getX() - 2, sy = searchBox.getY() - 2;
         int sw = searchBox.getWidth() + 4, sh = 20;
-        drawInsetBox(g, sx, sy, sw, sh, 0xFF2B1A0C, COL_PANEL_DARK);
+        drawInsetBox(g, sx, sy, sw, sh, 0xFF2A2A2A, 0xFFB0B0B0);
 
-        drawInsetBox(g, gridX - 4, gridY - 4, gridW + 8, gridH + 8, 0xFF8E7144, COL_PANEL_DARK);
+        drawInsetBox(g, gridX - 4, gridY - 4, gridW + 8, gridH + 8, 0xFF7C7C7C, COL_STONE_TOP);
 
         if (filtered.isEmpty()) {
             Component msg = Component.translatable("playerlink.gui.select_owner.empty");
@@ -234,12 +250,12 @@ public class PlayerSelectScreen extends Screen {
             drawTileGrid(g, mouseX, mouseY);
         }
 
-        Component hint = Component.literal("Click a player to select  ·  Double-click to confirm")
-                .withStyle(ChatFormatting.GRAY);
+        Component hint = Component.literal("Click a player to select  ·  Click again to confirm")
+                .withStyle(ChatFormatting.DARK_GRAY);
         g.drawString(font, hint,
                 panelX + (panelW - font.width(hint)) / 2,
-                panelY + panelH - 38,
-                0xFF5C3F1F, false);
+                panelY + panelH - 40,
+                COL_TEXT_MUTED, false);
 
         super.render(g, mouseX, mouseY, pt);
     }
@@ -262,13 +278,15 @@ public class PlayerSelectScreen extends Screen {
             boolean isCurrent  = currentOwner != null && currentOwner.equals(entry.uuid());
             boolean isHover    = i == hoveredIdx;
 
-            int top = isHover ? COL_TILE_BG_HI : COL_TILE_BG;
-            int bot = isHover ? COL_TILE_BG : 0xFF8E7144;
+            int top = isHover ? COL_SPRUCE_LIGHT : COL_SPRUCE_HI;
+            int bot = isHover ? COL_SPRUCE_HI    : COL_SPRUCE;
             g.fillGradient(tx, ty, tx + TILE_W, ty + TILE_H, top, bot);
 
-            int border = isSelected ? COL_TILE_SELECT
-                       : isCurrent  ? COL_TILE_CURRENT
-                       : COL_TILE_BORDER;
+            g.fill(tx + 2, ty + TILE_H / 2, tx + TILE_W - 2, ty + TILE_H / 2 + 1, COL_SPRUCE_DARK);
+
+            int border = isSelected ? COL_REDSTONE_HI
+                       : isCurrent  ? COL_REDSTONE
+                       : COL_SPRUCE_DARK;
             int borderThickness = (isSelected || isCurrent) ? 2 : 1;
             for (int t = 0; t < borderThickness; t++) {
                 g.fill(tx + t, ty + t, tx + TILE_W - t, ty + 1 + t, border);
@@ -279,7 +297,7 @@ public class PlayerSelectScreen extends Screen {
 
             int faceX = tx + (TILE_W - FACE_SIZE) / 2;
             int faceY = ty + 6;
-            g.fill(faceX - 1, faceY - 1, faceX + FACE_SIZE + 1, faceY + FACE_SIZE + 1, 0xFF3A2412);
+            g.fill(faceX - 1, faceY - 1, faceX + FACE_SIZE + 1, faceY + FACE_SIZE + 1, COL_SPRUCE_DARK);
 
             ResourceLocation skin = SkinCache.get(entry.uuid(), entry.name());
             RenderSystem.enableBlend();
@@ -294,16 +312,17 @@ public class PlayerSelectScreen extends Screen {
                 }
                 name = name + "…";
             }
-            int textColor = isSelected ? COL_TILE_SELECT
-                          : isCurrent  ? COL_TILE_CURRENT
-                          : COL_TEXT_DARK;
-            g.drawString(font, name, tx + (TILE_W - font.width(name)) / 2, ty + FACE_SIZE + 10, textColor, false);
+            int textColor = isSelected ? 0xFFFFFFFF
+                          : isCurrent  ? 0xFFFFE0E0
+                          : COL_TEXT_LIGHT;
+            g.drawString(font, name, tx + (TILE_W - font.width(name)) / 2, ty + FACE_SIZE + 10, textColor, true);
 
             if (isCurrent) {
-                int dotX = tx + TILE_W - 7;
+                int dotX = tx + TILE_W - 8;
                 int dotY = ty + 3;
-                g.fill(dotX, dotY, dotX + 4, dotY + 4, COL_TILE_CURRENT);
-                g.fill(dotX + 1, dotY + 1, dotX + 3, dotY + 3, 0xFFFFFFFF);
+                g.fill(dotX, dotY, dotX + 5, dotY + 5, COL_REDSTONE);
+                g.fill(dotX + 1, dotY + 1, dotX + 4, dotY + 4, COL_REDSTONE_HI);
+                g.fill(dotX + 2, dotY + 2, dotX + 3, dotY + 3, 0xFFFFFFFF);
             }
         }
 
@@ -314,34 +333,66 @@ public class PlayerSelectScreen extends Screen {
             g.fill(barX, gridY, barX + 3, gridY + gridH, 0x66000000);
             int barH = Math.max(20, gridH * gridH / (gridH + maxScroll()));
             int barY = gridY + (gridH - barH) * scroll / Math.max(1, maxScroll());
-            g.fill(barX, barY, barX + 3, barY + barH, COL_ACCENT_GOLD);
+            g.fill(barX, barY, barX + 3, barY + barH, COL_BRASS_TOP);
         }
     }
 
-    private void drawBeveledPanel(GuiGraphics g, int x, int y, int w, int h,
-                                  int borderColor, int lightColor, int darkColor) {
-        g.fill(x - 1, y - 1, x + w + 1, y, COL_PANEL_SHADOW);
-        g.fill(x - 1, y + h, x + w + 1, y + h + 1, COL_PANEL_SHADOW);
-        g.fill(x - 1, y, x, y + h, COL_PANEL_SHADOW);
-        g.fill(x + w, y, x + w + 1, y + h, COL_PANEL_SHADOW);
+    private void drawStonePanel(GuiGraphics g, int x, int y, int w, int h) {
+        g.fill(x - 1, y - 1, x + w + 1, y, COL_STONE_SHADOW);
+        g.fill(x - 1, y + h, x + w + 1, y + h + 1, COL_STONE_SHADOW);
+        g.fill(x - 1, y, x, y + h, COL_STONE_SHADOW);
+        g.fill(x + w, y, x + w + 1, y + h, COL_STONE_SHADOW);
 
-        g.fill(x, y, x + w, y + 2, borderColor);
-        g.fill(x, y + h - 2, x + w, y + h, borderColor);
-        g.fill(x, y, x + 2, y + h, borderColor);
-        g.fill(x + w - 2, y, x + w, y + h, borderColor);
+        g.fill(x, y, x + w, y + 2, COL_STONE_BORDER);
+        g.fill(x, y + h - 2, x + w, y + h, COL_STONE_BORDER);
+        g.fill(x, y, x + 2, y + h, COL_STONE_BORDER);
+        g.fill(x + w - 2, y, x + w, y + h, COL_STONE_BORDER);
 
-        g.fillGradient(x + 2, y + 2, x + w - 2, y + h - 2, lightColor, darkColor);
+        g.fillGradient(x + 2, y + 2, x + w - 2, y + h - 2, COL_STONE_TOP, COL_STONE_BOT);
 
-        g.fill(x + 2, y + 2, x + w - 2, y + 3, 0x40FFFFFF);
-        g.fill(x + 2, y + 2, x + 3, y + h - 2, 0x40FFFFFF);
+        g.fill(x + 2, y + 2, x + w - 2, y + 3, 0x60FFFFFF);
+        g.fill(x + 2, y + 2, x + 3, y + h - 2, 0x60FFFFFF);
     }
 
-    private void drawInsetBox(GuiGraphics g, int x, int y, int w, int h, int fillColor, int borderColor) {
+    private void drawInsetBox(GuiGraphics g, int x, int y, int w, int h, int fillColor, int lightColor) {
         g.fill(x, y, x + w, y + h, fillColor);
-        g.fill(x, y, x + w, y + 1, 0xFF1A0E05);
-        g.fill(x, y, x + 1, y + h, 0xFF1A0E05);
-        g.fill(x, y + h - 1, x + w, y + h, borderColor);
-        g.fill(x + w - 1, y, x + w, y + h, borderColor);
+        g.fill(x, y, x + w, y + 1, COL_STONE_SHADOW);
+        g.fill(x, y, x + 1, y + h, COL_STONE_SHADOW);
+        g.fill(x, y + h - 1, x + w, y + h, lightColor);
+        g.fill(x + w - 1, y, x + w, y + h, lightColor);
+    }
+
+    // Custom brass-painted button
+    private class BrassButton extends Button {
+        BrassButton(int x, int y, int w, int h, Component msg, OnPress onPress) {
+            super(x, y, w, h, msg, onPress, DEFAULT_NARRATION);
+        }
+
+        @Override
+        protected void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+            int x = getX(), y = getY(), w = getWidth(), h = getHeight();
+            boolean hovered = isHoveredOrFocused();
+
+            int top = hovered ? COL_BRASS_HI : COL_BRASS_TOP;
+            int bot = hovered ? COL_BRASS_TOP : COL_BRASS_BOT;
+
+            g.fill(x, y + h, x + w, y + h + 1, COL_STONE_SHADOW);
+
+            int border = hovered ? COL_REDSTONE : COL_BRASS_BORDER;
+            g.fill(x, y, x + w, y + 1, border);
+            g.fill(x, y + h - 1, x + w, y + h, border);
+            g.fill(x, y, x + 1, y + h, border);
+            g.fill(x + w - 1, y, x + w, y + h, border);
+
+            g.fillGradient(x + 1, y + 1, x + w - 1, y + h - 1, top, bot);
+
+            g.fill(x + 1, y + 1, x + w - 1, y + 2, 0x70FFFFFF);
+
+            int textColor = this.active ? COL_TEXT_DARK : 0x80000000;
+            int labelX = x + (w - font.width(getMessage())) / 2;
+            int labelY = y + (h - font.lineHeight) / 2 + 1;
+            g.drawString(font, getMessage(), labelX, labelY, textColor, false);
+        }
     }
 
     @Override public boolean isPauseScreen() { return false; }

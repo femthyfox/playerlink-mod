@@ -24,19 +24,19 @@ import net.minecraft.world.phys.Vec3;
 public final class SlotMath {
 
     // ── Frequency slots (CENTER positions in pixels)
-    public static final float FIRST_U  = 10.0f;
-    public static final float FIRST_V  = 3.5f;
-    public static final float SECOND_U = 10.0f;
-    public static final float SECOND_V = 8.5f;
+    public static final float FIRST_U  = 11.0f;
+    public static final float FIRST_V  = 5.5f;
+    public static final float SECOND_U = 11.0f;
+    public static final float SECOND_V = 10.5f;
 
     // ── Face / GUI slot (CENTER position)
-    public static final float FACE_U    = 3.0f;
-    public static final float FACE_V    = 5.5f;
+    public static final float FACE_U    = 5.5f;
+    public static final float FACE_V    = 8.0f;
     public static final float FACE_SIZE = 5.0f;
 
     // ── How far the slot floats from the block's surface
-    public static final float SLOT_HEIGHT_VERT_PX  = 3.5f;  // for floor / ceiling
-    public static final float SLOT_HEIGHT_HORIZ_PX = 2.5f;  // for the 4 walls
+    public static final float SLOT_HEIGHT_VERT_PX  = 3.8f;  // for floor / ceiling
+    public static final float SLOT_HEIGHT_HORIZ_PX = 8.5f;  // for the 4 walls
 
     private SlotMath() {}
 

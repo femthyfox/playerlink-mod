@@ -1,9 +1,9 @@
-{
-	"parent": "block/block",
-	"textures": {
-    "0": "create:block/redstone_bridge_powered",
-    "1": "create:block/redstone_antenna_powered",
-    "particle": "create:block/redstone_bridge_powered"
+"textures": {
+    "0": "create:block/redstone_bridge",
+    "1": "create:block/redstone_antenna",
+    "2": "create:block/redstone_bridge",
+    "3": "create:block/redstone_antenna",
+    "particle": "create:block/redstone_bridge"
 },
 	"elements": [
 		{

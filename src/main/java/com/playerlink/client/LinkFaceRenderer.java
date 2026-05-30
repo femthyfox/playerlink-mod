@@ -95,7 +95,7 @@ public final class LinkFaceRenderer {
      */
     private static void playerlink$applyFaceTransform(PoseStack pose, Direction facing) {
         // Place at the face-slot center in block-local space, then orient.
-        var center = SlotMath.localCenter(facing, SlotMath.FACE_U, SlotMath.FACE_V);
+        var center = SlotMath.localFaceCenter(facing);
         pose.translate(center.x, center.y, center.z);
 
         switch (facing) {

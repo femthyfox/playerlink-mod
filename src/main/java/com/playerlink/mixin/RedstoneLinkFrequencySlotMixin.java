@@ -14,19 +14,10 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/**
- * Moves Create's frequency value-box slots to our custom positions on the side
- * of the block. The new positions are defined in {@link SlotMath}.
- *
- * Defensive notes:
- *   • Wrapped in try/catch so any internal Create API change can't crash the game
- *     — it just falls through to Create's original behaviour.
- *   • Uses no external helpers (no VecHelper) — pure Vec3 math.
- *   • Resolves the first/second flag via a method call but tolerates failure.
- */
 @Mixin(value = RedstoneLinkFrequencySlot.class, remap = false)
 public abstract class RedstoneLinkFrequencySlotMixin {
 
+    /** Override Create's slot offset to use our custom positions. */
     @Inject(method = "getLocalOffset", at = @At("HEAD"), cancellable = true, remap = false)
     private void playerlink$overrideOffset(LevelAccessor level,
                                            BlockPos pos,
@@ -39,10 +30,34 @@ public abstract class RedstoneLinkFrequencySlotMixin {
             float u = isFirst ? SlotMath.FIRST_U  : SlotMath.SECOND_U;
             float v = isFirst ? SlotMath.FIRST_V  : SlotMath.SECOND_V;
 
-            Vec3 result = SlotMath.localCenter(facing, u, v);
-            cir.setReturnValue(result);
+            cir.setReturnValue(SlotMath.localFreqCenter(facing, u, v));
         } catch (Throwable t) {
-            // Silently fall through to Create's original positioning
+            // Silently fall through to Create's original
+        }
+    }
+
+    /**
+     * Override Create's 3D distance check with a 2D-in-the-block-face check.
+     * Players hit the visible block surface (e.g. plate front on a wall), but
+     * the slot's render position may sit at a different depth. Comparing only
+     * the axes IN the working-face plane makes hit testing work regardless.
+     */
+    @Inject(method = "testHit", at = @At("HEAD"), cancellable = true, remap = false)
+    private void playerlink$overrideTestHit(LevelAccessor level,
+                                            BlockPos pos,
+                                            BlockState state,
+                                            Vec3 localHit,
+                                            CallbackInfoReturnable<Boolean> cir) {
+        try {
+            boolean isFirst = playerlink$resolveFirst();
+            Direction facing = state.getValue(RedstoneLinkBlock.FACING);
+            double dist = SlotMath.freqSlotPlanarDistance(facing, isFirst, localHit);
+            // 2.5 px radius is a good in-face hit zone — large enough to feel
+            // forgiving, small enough that the two slots don't overlap.
+            double tolerance = 2.5 / 16.0;
+            cir.setReturnValue(dist < tolerance);
+        } catch (Throwable t) {
+            // Silently fall through to Create's original
         }
     }
 

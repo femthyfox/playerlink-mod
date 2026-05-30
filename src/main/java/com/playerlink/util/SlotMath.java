@@ -6,20 +6,11 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Slot positioning math. Each facing has its OWN explicit transform so we can
- * tune floor/ceiling and wall independently without one breaking the other.
+ * Slot positioning math. Each facing has an explicit transform.
  *
- * ─── PER-SLOT POSITIONS (CENTERS, pixels 0..16) ─────────────────────────────
- *   FIRST_U / FIRST_V   blue frequency slot
- *   SECOND_U / SECOND_V red  frequency slot
- *   FACE_U / FACE_V     player-face GUI slot
- *   FACE_SIZE           rendered square side, pixels
- * ─── FLOAT DISTANCE (how far the slot sits from the surface) ────────────────
- *   SLOT_HEIGHT_VERT_PX  used for FLOOR (UP) and CEILING (DOWN) — sits above
- *                        the 3px controller plate.
- *   SLOT_HEIGHT_HORIZ_PX used for the four WALL facings — sits in front of
- *                        the wall-model's plate surface.
- * ────────────────────────────────────────────────────────────────────────────
+ * Two separate "height" values let us position frequency slots and the face
+ * slot at different distances from the block surface (e.g. face hovers
+ * slightly higher than the freq slots on the floor).
  */
 public final class SlotMath {
 
@@ -34,25 +25,34 @@ public final class SlotMath {
     public static final float FACE_V    = 8.0f;
     public static final float FACE_SIZE = 5.0f;
 
-    // ── How far the slot floats from the block's surface
-    public static final float SLOT_HEIGHT_VERT_PX  = 3.8f;  // for floor / ceiling
-    public static final float SLOT_HEIGHT_HORIZ_PX = 8.5f;  // for the 4 walls
+    // ── Surface offsets — independently tuned for floor/ceiling vs walls
+    //    and for frequency vs face slots.
+    public static final float FREQ_HEIGHT_VERT_PX  = 2.8f;   // freq slots on floor / ceiling
+    public static final float FACE_HEIGHT_VERT_PX  = 3.8f;   // face on floor / ceiling
+    public static final float FREQ_HEIGHT_HORIZ_PX = 7.5f;   // freq slots on walls
+    public static final float FACE_HEIGHT_HORIZ_PX = 7.5f;   // face on walls
 
     private SlotMath() {}
 
-    public static Vec3 localCenter(Direction facing, float uPx, float vPx) {
+    /** Position in block-local coords (0..1) for a frequency-slot pixel UV. */
+    public static Vec3 localFreqCenter(Direction facing, float uPx, float vPx) {
+        return localCenter(facing, uPx, vPx, FREQ_HEIGHT_VERT_PX, FREQ_HEIGHT_HORIZ_PX);
+    }
+
+    /** Position in block-local coords for the face-slot pixel UV. */
+    public static Vec3 localFaceCenter(Direction facing) {
+        return localCenter(facing, FACE_U, FACE_V, FACE_HEIGHT_VERT_PX, FACE_HEIGHT_HORIZ_PX);
+    }
+
+    private static Vec3 localCenter(Direction facing, float uPx, float vPx,
+                                    float vertDepthPx, float horizDepthPx) {
         double u = uPx / 16.0;
         double v = vPx / 16.0;
-        double hV = SLOT_HEIGHT_VERT_PX  / 16.0;
-        double hH = SLOT_HEIGHT_HORIZ_PX / 16.0;
+        double hV = vertDepthPx  / 16.0;
+        double hH = horizDepthPx / 16.0;
         return switch (facing) {
-            // Floor: flip U so slots end up on the side opposite to where the
-            // BlockBench export landed them.
             case UP    -> new Vec3(1.0 - u, hV, v);
-            // Ceiling: same X-flip as floor, plus mirror Y to sit underneath.
             case DOWN  -> new Vec3(1.0 - u, 1.0 - hV, v);
-            // Wall N: working face at Z=0. User's "V" maps to "down from top of
-            // wall" → use (1 - v) for Y. X mirrors like the floor.
             case NORTH -> new Vec3(1.0 - u, 1.0 - v, hH);
             case SOUTH -> new Vec3(u, 1.0 - v, 1.0 - hH);
             case EAST  -> new Vec3(1.0 - hH, 1.0 - v, 1.0 - u);
@@ -60,26 +60,31 @@ public final class SlotMath {
         };
     }
 
+    /**
+     * Build an AABB for the face slot that extends THROUGH the block in the
+     * facing-perpendicular axis. This ensures the clickable region covers the
+     * visible block surface, regardless of how deep the slot's render position
+     * sits behind/in-front-of the model.
+     */
     public static AABB faceSlotWorldAABB(BlockPos pos, Direction facing) {
-        Vec3 center = localCenter(facing, FACE_U, FACE_V);
+        Vec3 center = localFaceCenter(facing);
         double half = (FACE_SIZE / 2.0) / 16.0;
-        double thick = 1.0 / 16.0;
         Vec3 origin = Vec3.atLowerCornerOf(pos);
 
         double minX, maxX, minY, maxY, minZ, maxZ;
         switch (facing) {
             case UP, DOWN -> {
                 minX = center.x - half; maxX = center.x + half;
-                minY = center.y - thick / 2; maxY = center.y + thick / 2;
+                minY = 0;               maxY = 1.0;
                 minZ = center.z - half; maxZ = center.z + half;
             }
             case NORTH, SOUTH -> {
                 minX = center.x - half; maxX = center.x + half;
                 minY = center.y - half; maxY = center.y + half;
-                minZ = center.z - thick / 2; maxZ = center.z + thick / 2;
+                minZ = 0;               maxZ = 1.0;
             }
-            default -> {
-                minX = center.x - thick / 2; maxX = center.x + thick / 2;
+            default -> { // EAST / WEST
+                minX = 0;               maxX = 1.0;
                 minY = center.y - half; maxY = center.y + half;
                 minZ = center.z - half; maxZ = center.z + half;
             }
@@ -91,5 +96,22 @@ public final class SlotMath {
 
     public static boolean isFaceSlotHit(BlockPos pos, Direction facing, Vec3 hitLocation) {
         return faceSlotWorldAABB(pos, facing).inflate(0.01).contains(hitLocation);
+    }
+
+    /**
+     * Distance from a block-local hit point to the frequency slot center,
+     * IGNORING the facing-perpendicular axis. Used to override Create's
+     * 3D distance check so clicks on the block's surface register even when
+     * the slot's render position sits at a different depth.
+     */
+    public static double freqSlotPlanarDistance(Direction facing, boolean first, Vec3 localHit) {
+        float u = first ? FIRST_U  : SECOND_U;
+        float v = first ? FIRST_V  : SECOND_V;
+        Vec3 c = localFreqCenter(facing, u, v);
+        return switch (facing) {
+            case UP, DOWN     -> Math.hypot(localHit.x - c.x, localHit.z - c.z);
+            case NORTH, SOUTH -> Math.hypot(localHit.x - c.x, localHit.y - c.y);
+            default           -> Math.hypot(localHit.z - c.z, localHit.y - c.y);
+        };
     }
 }

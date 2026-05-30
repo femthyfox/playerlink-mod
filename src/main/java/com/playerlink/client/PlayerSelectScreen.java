@@ -39,12 +39,12 @@ public class PlayerSelectScreen extends Screen {
     private static final int COL_STONE_BORDER  = 0xFF3D3D3D;
     private static final int COL_STONE_SHADOW  = 0xFF1F1F1F;
 
-    // Spruce wood
-    private static final int COL_SPRUCE        = 0xFFC09767;
-    private static final int COL_SPRUCE_HI     = 0xFFD7B289;
-    private static final int COL_SPRUCE_DARK   = 0xFF6A4926;
-    private static final int COL_SPRUCE_LIGHT  = 0xFFE6CDA9;
-    private static final int COL_SPRUCE_FACE_WELL = 0xFFE6CDA9;
+    // Spruce wood — bright "polished spruce planks" tones
+    private static final int COL_SPRUCE        = 0xFFD4A574;
+    private static final int COL_SPRUCE_HI     = 0xFFE8C79A;
+    private static final int COL_SPRUCE_DARK   = 0xFF8A5E33;
+    private static final int COL_SPRUCE_LIGHT  = 0xFFF3DDB8;
+    private static final int COL_SPRUCE_FACE_WELL = 0xFFF3DDB8;
 
     // Brass (buttons)
     private static final int COL_BRASS_TOP     = 0xFFE6C572;
@@ -213,12 +213,17 @@ public class PlayerSelectScreen extends Screen {
 
     @Override
     public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        g.fill(0, 0, width, height, COL_BG_DIM);
+        // Intentionally a no-op. The dim overlay is drawn ONCE at the start of render()
+        // below. If we dimmed here, vanilla Screen.render() would call us a second time
+        // (after our panel/tiles/faces are drawn), stacking a 2nd 0xB0000000 layer over
+        // everything and darkening the wood + faces. Buttons stayed bright because they
+        // render AFTER super.render()'s renderBackground call.
     }
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float pt) {
-        renderBackground(g, mouseX, mouseY, pt);
+        // Single dim — drawn here, NOT in renderBackground (see note above).
+        g.fill(0, 0, width, height, COL_BG_DIM);
 
         // ── Drop shadow under panel
         g.fill(panelX + 3, panelY + 4, panelX + panelW + 3, panelY + panelH + 4, 0x90000000);

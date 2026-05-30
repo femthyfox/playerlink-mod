@@ -40,11 +40,11 @@ public class PlayerSelectScreen extends Screen {
     private static final int COL_STONE_SHADOW  = 0xFF1F1F1F;
 
     // Spruce wood
-    private static final int COL_SPRUCE        = 0xFF9C7048;
-    private static final int COL_SPRUCE_HI     = 0xFFB78859;
+    private static final int COL_SPRUCE        = 0xFFC09767;
+    private static final int COL_SPRUCE_HI     = 0xFFD7B289;
     private static final int COL_SPRUCE_DARK   = 0xFF6A4926;
-    private static final int COL_SPRUCE_LIGHT  = 0xFFCBA378;
-    private static final int COL_SPRUCE_FACE_WELL = 0xFFD0D0D0;
+    private static final int COL_SPRUCE_LIGHT  = 0xFFE6CDA9;
+    private static final int COL_SPRUCE_FACE_WELL = 0xFFE6CDA9;
 
     // Brass (buttons)
     private static final int COL_BRASS_TOP     = 0xFFE6C572;
@@ -349,8 +349,8 @@ public class PlayerSelectScreen extends Screen {
             // Light text on dark spruce — good contrast
             int textColor = isSelected ? 0xFFFFFFFF
                           : isCurrent  ? 0xFFFFE0E0
-                          : COL_TEXT_LIGHT;
-            g.drawString(font, name, tx + (TILE_W - font.width(name)) / 2, ty + FACE_SIZE + 10, textColor, true);
+                          : COL_TEXT_DARK;
+            g.drawString(font, name, tx + (TILE_W - font.width(name)) / 2, ty + FACE_SIZE + 10, textColor, false);
 
             // Redstone-glow dot for current owner
             if (isCurrent) {

@@ -7,22 +7,19 @@ import net.minecraft.world.phys.Vec3;
 
 public final class SlotMath {
 
-    // ── Frequency slots (CENTER positions in pixels)
     public static final float FIRST_U  = 11.0f;
     public static final float FIRST_V  = 5.5f;
     public static final float SECOND_U = 11.0f;
     public static final float SECOND_V = 10.5f;
 
-    // ── Face / GUI slot (CENTER position)
     public static final float FACE_U    = 5.5f;
     public static final float FACE_V    = 8.0f;
     public static final float FACE_SIZE = 5.0f;
 
-    // ── Surface offsets — tune freely
-    public static final float FREQ_HEIGHT_VERT_PX  = 2.8f;   // freq slots, floor/ceiling
-    public static final float FACE_HEIGHT_VERT_PX  = 3.8f;   // face,       floor/ceiling
-    public static final float FREQ_HEIGHT_HORIZ_PX = 7.5f;   // freq slots, walls
-    public static final float FACE_HEIGHT_HORIZ_PX = 7.5f;   // face,       walls
+    public static final float FREQ_HEIGHT_VERT_PX  = 2.8f;
+    public static final float FACE_HEIGHT_VERT_PX  = 3.8f;
+    public static final float FREQ_HEIGHT_HORIZ_PX = 7.5f;
+    public static final float FACE_HEIGHT_HORIZ_PX = 12.5f;  // ← pushed closer to wall plate
 
     private SlotMath() {}
 

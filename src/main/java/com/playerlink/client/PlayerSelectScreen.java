@@ -30,11 +30,11 @@ public class PlayerSelectScreen extends Screen {
     private static final int COL_STONE_BORDER  = 0xFF3D3D3D;
     private static final int COL_STONE_SHADOW  = 0xFF1F1F1F;
 
-    private static final int COL_SPRUCE           = 0xFFB07B43;
-    private static final int COL_SPRUCE_HI        = 0xFFCB9558;
-    private static final int COL_SPRUCE_DARK      = 0xFF7A532A;
-    private static final int COL_SPRUCE_LIGHT     = 0xFFE0B581;
-    private static final int COL_SPRUCE_FACE_WELL = 0xFFE8E0CC;
+    private static final int COL_SPRUCE        = 0xFF9C7048;
+    private static final int COL_SPRUCE_HI     = 0xFFB78859;
+    private static final int COL_SPRUCE_DARK   = 0xFF6A4926;
+    private static final int COL_SPRUCE_LIGHT  = 0xFFCBA378;
+    private static final int COL_SPRUCE_FACE_WELL = 0xFFD0D0D0;
 
     private static final int COL_BRASS_TOP     = 0xFFE6C572;
     private static final int COL_BRASS_BOT     = 0xFFB68A3F;

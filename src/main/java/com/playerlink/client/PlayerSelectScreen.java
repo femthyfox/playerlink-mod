@@ -23,7 +23,6 @@ import java.util.UUID;
 
 public class PlayerSelectScreen extends Screen {
 
-    // ─── PALETTE ───────────────────────────────────────────────────────────
     private static final int COL_BG_DIM        = 0xB0000000;
 
     private static final int COL_STONE_TOP     = 0xFFCFCFCF;
@@ -31,10 +30,11 @@ public class PlayerSelectScreen extends Screen {
     private static final int COL_STONE_BORDER  = 0xFF3D3D3D;
     private static final int COL_STONE_SHADOW  = 0xFF1F1F1F;
 
-    private static final int COL_SPRUCE        = 0xFF6B4A2A;
-    private static final int COL_SPRUCE_HI     = 0xFF8A6238;
-    private static final int COL_SPRUCE_DARK   = 0xFF3F2916;
-    private static final int COL_SPRUCE_LIGHT  = 0xFFA37B49;
+    private static final int COL_SPRUCE           = 0xFF8C6739;
+    private static final int COL_SPRUCE_HI        = 0xFFAD7D45;
+    private static final int COL_SPRUCE_DARK      = 0xFF5A3E1B;
+    private static final int COL_SPRUCE_LIGHT     = 0xFFC49560;
+    private static final int COL_SPRUCE_FACE_WELL = 0xFF6B4A2A;
 
     private static final int COL_BRASS_TOP     = 0xFFE6C572;
     private static final int COL_BRASS_BOT     = 0xFFB68A3F;
@@ -46,12 +46,10 @@ public class PlayerSelectScreen extends Screen {
 
     private static final int COL_TEXT_DARK     = 0xFF1A0F05;
     private static final int COL_TEXT_LIGHT    = 0xFFFFF5DC;
-    private static final int COL_TEXT_MUTED    = 0xFF555555;
 
-    // ─── LAYOUT ───────────────────────────────────────────────────────────
     private static final int FACE_SIZE    = 32;
-    private static final int TILE_W       = 56;
-    private static final int TILE_H       = 60;
+    private static final int TILE_W       = 68;
+    private static final int TILE_H       = 62;
     private static final int TILE_PAD     = 6;
     private static final int PANEL_MARGIN = 24;
 
@@ -87,7 +85,7 @@ public class PlayerSelectScreen extends Screen {
 
     @Override
     protected void init() {
-        panelW = Math.min(440, width - PANEL_MARGIN * 2);
+        panelW = Math.min(460, width - PANEL_MARGIN * 2);
         panelH = Math.min(360, height - PANEL_MARGIN * 2);
         panelX = (width - panelW) / 2;
         panelY = (height - panelH) / 2;
@@ -206,13 +204,10 @@ public class PlayerSelectScreen extends Screen {
     public void render(GuiGraphics g, int mouseX, int mouseY, float pt) {
         renderBackground(g, mouseX, mouseY, pt);
 
-        // Drop shadow under panel
         g.fill(panelX + 3, panelY + 4, panelX + panelW + 3, panelY + panelH + 4, 0x90000000);
 
-        // Stone panel
         drawStonePanel(g, panelX, panelY, panelW, panelH);
 
-        // Spruce title bar
         int titleBarH = 20;
         int tbx = panelX + 4, tby = panelY + 4;
         int tbw = panelW - 8;
@@ -238,7 +233,8 @@ public class PlayerSelectScreen extends Screen {
         int sw = searchBox.getWidth() + 4, sh = 20;
         drawInsetBox(g, sx, sy, sw, sh, 0xFF2A2A2A, 0xFFB0B0B0);
 
-        drawInsetBox(g, gridX - 4, gridY - 4, gridW + 8, gridH + 8, 0xFF7C7C7C, COL_STONE_TOP);
+        drawInsetBox(g, gridX - 4, gridY - 4, gridW + 8, gridH + 8, 0xFF6F6F6F, COL_STONE_TOP);
+        drawGridDecor(g, gridX - 4, gridY - 4, gridW + 8, gridH + 8);
 
         if (filtered.isEmpty()) {
             Component msg = Component.translatable("playerlink.gui.select_owner.empty");
@@ -250,12 +246,11 @@ public class PlayerSelectScreen extends Screen {
             drawTileGrid(g, mouseX, mouseY);
         }
 
-        Component hint = Component.literal("Click a player to select  ·  Click again to confirm")
-                .withStyle(ChatFormatting.DARK_GRAY);
+        Component hint = Component.literal("Click a player to select  ·  Click again to confirm");
         g.drawString(font, hint,
                 panelX + (panelW - font.width(hint)) / 2,
                 panelY + panelH - 40,
-                COL_TEXT_MUTED, false);
+                COL_TEXT_DARK, false);
 
         super.render(g, mouseX, mouseY, pt);
     }
@@ -297,7 +292,9 @@ public class PlayerSelectScreen extends Screen {
 
             int faceX = tx + (TILE_W - FACE_SIZE) / 2;
             int faceY = ty + 6;
-            g.fill(faceX - 1, faceY - 1, faceX + FACE_SIZE + 1, faceY + FACE_SIZE + 1, COL_SPRUCE_DARK);
+            // Lighter face well — 2-px bevel so face stands out
+            g.fill(faceX - 2, faceY - 2, faceX + FACE_SIZE + 2, faceY + FACE_SIZE + 2, COL_SPRUCE_DARK);
+            g.fill(faceX - 1, faceY - 1, faceX + FACE_SIZE + 1, faceY + FACE_SIZE + 1, COL_SPRUCE_FACE_WELL);
 
             ResourceLocation skin = SkinCache.get(entry.uuid(), entry.name());
             RenderSystem.enableBlend();
@@ -362,7 +359,39 @@ public class PlayerSelectScreen extends Screen {
         g.fill(x + w - 1, y, x + w, y + h, lightColor);
     }
 
-    // Custom brass-painted button
+    /** Decorative stone-brick pattern + brass rivet corners. */
+    private void drawGridDecor(GuiGraphics g, int x, int y, int w, int h) {
+        int brickW = 16, brickH = 6;
+        int xStart = x + 2, yStart = y + 2;
+        int xEnd = x + w - 2, yEnd = y + h - 2;
+
+        int rowIdx = 0;
+        for (int by = yStart; by < yEnd; by += brickH + 1) {
+            int offset = (rowIdx++ % 2 == 0) ? 0 : brickW / 2;
+            for (int bx = xStart - offset; bx < xEnd; bx += brickW + 1) {
+                int x1 = Math.max(bx, xStart);
+                int x2 = Math.min(bx + brickW, xEnd);
+                int y1 = by;
+                int y2 = Math.min(by + brickH, yEnd);
+                if (x2 - x1 <= 1 || y2 - y1 <= 1) continue;
+                g.fill(x1, y1, x2, y1 + 1, 0x18FFFFFF);
+                g.fill(x1, y2 - 1, x2, y2, 0x18000000);
+            }
+        }
+
+        drawRivet(g, x + 3, y + 3);
+        drawRivet(g, x + w - 7, y + 3);
+        drawRivet(g, x + 3, y + h - 7);
+        drawRivet(g, x + w - 7, y + h - 7);
+    }
+
+    private void drawRivet(GuiGraphics g, int x, int y) {
+        g.fill(x, y, x + 4, y + 4, COL_STONE_SHADOW);
+        g.fill(x, y, x + 3, y + 3, COL_BRASS_BORDER);
+        g.fill(x + 1, y + 1, x + 3, y + 3, COL_BRASS_BOT);
+        g.fill(x + 1, y + 1, x + 2, y + 2, COL_BRASS_HI);
+    }
+
     private class BrassButton extends Button {
         BrassButton(int x, int y, int w, int h, Component msg, OnPress onPress) {
             super(x, y, w, h, msg, onPress, DEFAULT_NARRATION);
@@ -385,7 +414,6 @@ public class PlayerSelectScreen extends Screen {
             g.fill(x + w - 1, y, x + w, y + h, border);
 
             g.fillGradient(x + 1, y + 1, x + w - 1, y + h - 1, top, bot);
-
             g.fill(x + 1, y + 1, x + w - 1, y + 2, 0x70FFFFFF);
 
             int textColor = this.active ? COL_TEXT_DARK : 0x80000000;

@@ -29,7 +29,7 @@ public final class SlotMath {
     //    and for frequency vs face slots.
     public static final float FREQ_HEIGHT_VERT_PX  = 2.8f;   // freq slots on floor / ceiling
     public static final float FACE_HEIGHT_VERT_PX  = 3.8f;   // face on floor / ceiling
-    public static final float FREQ_HEIGHT_HORIZ_PX = 7.5f;   // freq slots on walls
+    public static final float FREQ_HEIGHT_HORIZ_PX = 12.5f;  // freq slots on walls (flush with plate)
     public static final float FACE_HEIGHT_HORIZ_PX = 12.5f;  // face on walls (flush with plate)
 
     private SlotMath() {}

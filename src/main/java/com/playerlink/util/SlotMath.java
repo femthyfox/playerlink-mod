@@ -6,52 +6,57 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Geometry for placing redstone-link slots based on a top-down spec from the
- * user. Coordinates are TREATED AS CENTERS of the slot (not bottom-left).
+ * Slot positioning math. Each facing has its OWN explicit transform so we can
+ * tune floor/ceiling and wall independently without one breaking the other.
  *
- * ─── COORDINATE TUNING ────────────────────────────────────────────────────
- * If the slots end up on the wrong side of the block, flip these toggles:
- *   FLIP_U → mirrors the "right" axis  (X)
- *   FLIP_V → mirrors the "up"  axis    (Z)
- *
- *   FIRST_U/V    blue frequency slot (center, pixels 0..16)
- *   SECOND_U/V   red  frequency slot (center)
- *   FACE_U/V     player-face GUI slot (center) — FACE_SIZE is the square side
- *   SLOT_HEIGHT  how far ABOVE the block-top surface the slot floats (px)
- * ──────────────────────────────────────────────────────────────────────────
+ * ─── PER-SLOT POSITIONS (CENTERS, pixels 0..16) ─────────────────────────────
+ *   FIRST_U / FIRST_V   blue frequency slot
+ *   SECOND_U / SECOND_V red  frequency slot
+ *   FACE_U / FACE_V     player-face GUI slot
+ *   FACE_SIZE           rendered square side, pixels
+ * ─── FLOAT DISTANCE (how far the slot sits from the surface) ────────────────
+ *   SLOT_HEIGHT_VERT_PX  used for FLOOR (UP) and CEILING (DOWN) — sits above
+ *                        the 3px controller plate.
+ *   SLOT_HEIGHT_HORIZ_PX used for the four WALL facings — sits in front of
+ *                        the wall-model's plate surface.
+ * ────────────────────────────────────────────────────────────────────────────
  */
 public final class SlotMath {
 
-    // Flip toggles — try one or both if the slots end up mirrored in-game
-    public static final boolean FLIP_U = false;
-    public static final boolean FLIP_V = true;   // user's "up" in BB top-down = north
-
-    // Frequency slots (CENTER positions in pixels)
+    // ── Frequency slots (CENTER positions in pixels)
     public static final float FIRST_U  = 10.0f;
     public static final float FIRST_V  = 3.5f;
     public static final float SECOND_U = 10.0f;
     public static final float SECOND_V = 8.5f;
 
-    // Face / GUI slot (CENTER position, size in pixels)
+    // ── Face / GUI slot (CENTER position)
     public static final float FACE_U    = 3.0f;
     public static final float FACE_V    = 5.5f;
     public static final float FACE_SIZE = 5.0f;
 
-    public static final float SLOT_HEIGHT_PX = 3.5f;
+    // ── How far the slot floats from the block's surface
+    public static final float SLOT_HEIGHT_VERT_PX  = 3.5f;  // for floor / ceiling
+    public static final float SLOT_HEIGHT_HORIZ_PX = 2.5f;  // for the 4 walls
 
     private SlotMath() {}
 
     public static Vec3 localCenter(Direction facing, float uPx, float vPx) {
-        double u = (FLIP_U ? (16f - uPx) : uPx) / 16.0;
-        double v = (FLIP_V ? (16f - vPx) : vPx) / 16.0;
-        double h = SLOT_HEIGHT_PX / 16.0;
+        double u = uPx / 16.0;
+        double v = vPx / 16.0;
+        double hV = SLOT_HEIGHT_VERT_PX  / 16.0;
+        double hH = SLOT_HEIGHT_HORIZ_PX / 16.0;
         return switch (facing) {
-            case UP    -> new Vec3(u, h, v);
-            case DOWN  -> new Vec3(u, 1.0 - h, 1.0 - v);
-            case SOUTH -> new Vec3(u, v, 1.0 - h);
-            case NORTH -> new Vec3(1.0 - u, v, h);
-            case EAST  -> new Vec3(1.0 - h, v, 1.0 - u);
-            case WEST  -> new Vec3(h, v, u);
+            // Floor: flip U so slots end up on the side opposite to where the
+            // BlockBench export landed them.
+            case UP    -> new Vec3(1.0 - u, hV, v);
+            // Ceiling: same X-flip as floor, plus mirror Y to sit underneath.
+            case DOWN  -> new Vec3(1.0 - u, 1.0 - hV, v);
+            // Wall N: working face at Z=0. User's "V" maps to "down from top of
+            // wall" → use (1 - v) for Y. X mirrors like the floor.
+            case NORTH -> new Vec3(1.0 - u, 1.0 - v, hH);
+            case SOUTH -> new Vec3(u, 1.0 - v, 1.0 - hH);
+            case EAST  -> new Vec3(1.0 - hH, 1.0 - v, 1.0 - u);
+            case WEST  -> new Vec3(hH, 1.0 - v, u);
         };
     }
 

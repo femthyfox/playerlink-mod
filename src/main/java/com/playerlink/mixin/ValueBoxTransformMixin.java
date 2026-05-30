@@ -14,29 +14,24 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(value = RedstoneLinkFrequencySlot.class, remap = false)
-public abstract class RedstoneLinkFrequencySlotMixin {
+@Mixin(value = ValueBoxTransform.class, remap = false)
+public abstract class ValueBoxTransformMixin {
 
-    @Inject(method = "getLocalOffset", at = @At("HEAD"), cancellable = true, remap = false)
-    private void playerlink$overrideOffset(LevelAccessor level, BlockPos pos, BlockState state,
-                                           CallbackInfoReturnable<Vec3> cir) {
+    @Inject(method = "testHit", at = @At("HEAD"), cancellable = true, remap = false)
+    private void playerlink$overrideTestHit(LevelAccessor level,
+                                            BlockPos pos,
+                                            BlockState state,
+                                            Vec3 localHit,
+                                            CallbackInfoReturnable<Boolean> cir) {
+        if (!(((Object) this) instanceof RedstoneLinkFrequencySlot self)) return;
         try {
-            boolean isFirst = playerlink$resolveFirst();
             Direction facing = state.getValue(RedstoneLinkBlock.FACING);
-            float u = isFirst ? SlotMath.FIRST_U  : SlotMath.SECOND_U;
-            float v = isFirst ? SlotMath.FIRST_V  : SlotMath.SECOND_V;
-            cir.setReturnValue(SlotMath.localFreqCenter(facing, u, v));
+            boolean isFirst = self.isFirst();
+            double dist = SlotMath.freqSlotPlanarDistance(facing, isFirst, localHit);
+            double tolerance = 2.5 / 16.0;
+            cir.setReturnValue(dist < tolerance);
         } catch (Throwable t) {
             // fall through to Create's default
-        }
-    }
-
-    @org.spongepowered.asm.mixin.Unique
-    private boolean playerlink$resolveFirst() {
-        try {
-            return ((ValueBoxTransform.Dual) (Object) this).isFirst();
-        } catch (Throwable t) {
-            return true;
         }
     }
 }

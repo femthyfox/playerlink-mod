@@ -7,11 +7,7 @@ import net.minecraft.world.phys.Vec3;
 
 public final class SlotMath {
 
-    // ── COORDINATE FLIP TOGGLES — try one or both if slots end up mirrored
-    public static final boolean FLIP_U = false;  // mirror "right" axis
-    public static final boolean FLIP_V = true;   // mirror "up"    axis  (user's "up" = north in BB top-down)
-
-    // ── Frequency slots (CENTER positions in pixels 0..16)
+    // ── Frequency slots (CENTER positions in pixels)
     public static final float FIRST_U  = 10.0f;
     public static final float FIRST_V  = 3.5f;
     public static final float SECOND_U = 10.0f;
@@ -22,21 +18,24 @@ public final class SlotMath {
     public static final float FACE_V    = 5.5f;
     public static final float FACE_SIZE = 5.0f;
 
-    public static final float SLOT_HEIGHT_PX = 3.5f;
+    // ── How far the slot floats from the block's surface
+    public static final float SLOT_HEIGHT_VERT_PX  = 3.5f;  // floor / ceiling
+    public static final float SLOT_HEIGHT_HORIZ_PX = 2.5f;  // walls (reduced by 1 px)
 
     private SlotMath() {}
 
     public static Vec3 localCenter(Direction facing, float uPx, float vPx) {
-        double u = (FLIP_U ? (16f - uPx) : uPx) / 16.0;
-        double v = (FLIP_V ? (16f - vPx) : vPx) / 16.0;
-        double h = SLOT_HEIGHT_PX / 16.0;
+        double u = uPx / 16.0;
+        double v = vPx / 16.0;
+        double hV = SLOT_HEIGHT_VERT_PX  / 16.0;
+        double hH = SLOT_HEIGHT_HORIZ_PX / 16.0;
         return switch (facing) {
-            case UP    -> new Vec3(u, h, v);
-            case DOWN  -> new Vec3(u, 1.0 - h, 1.0 - v);
-            case SOUTH -> new Vec3(u, v, 1.0 - h);
-            case NORTH -> new Vec3(1.0 - u, v, h);
-            case EAST  -> new Vec3(1.0 - h, v, 1.0 - u);
-            case WEST  -> new Vec3(h, v, u);
+            case UP    -> new Vec3(1.0 - u, hV, v);
+            case DOWN  -> new Vec3(1.0 - u, 1.0 - hV, v);
+            case NORTH -> new Vec3(1.0 - u, 1.0 - v, hH);
+            case SOUTH -> new Vec3(u, 1.0 - v, 1.0 - hH);
+            case EAST  -> new Vec3(1.0 - hH, 1.0 - v, 1.0 - u);
+            case WEST  -> new Vec3(hH, 1.0 - v, u);
         };
     }
 

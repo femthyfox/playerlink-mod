@@ -3,21 +3,30 @@ package com.playerlink.server;
 import com.mojang.brigadier.CommandDispatcher;
 import com.playerlink.PlayerLinkMod;
 import com.playerlink.api.IOwnedLink;
+import com.playerlink.util.SlotMath;
+import com.simibubi.create.content.redstone.link.RedstoneLinkBlock;
 import com.simibubi.create.content.redstone.link.RedstoneLinkBlockEntity;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.common.util.TriState;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 
 public final class ServerEvents {
 
@@ -90,5 +99,31 @@ public final class ServerEvents {
         BlockEntity be = sp.level().getBlockEntity(hit.getBlockPos());
         if (be instanceof RedstoneLinkBlockEntity) return hit.getBlockPos();
         return null;
+    }
+
+    /**
+     * Server-side mirror of ClientEvents#onUseBlock. The client cancels its own
+     * event, but vanilla still ships a ServerboundUseItemOnPacket; the server
+     * then fires its own RightClickBlock event, and if we don't cancel it here
+     * too, BlockItem#useOn runs and places whatever block is in hand.
+     */
+    @SubscribeEvent(priority = EventPriority.HIGH)
+    public static void onUseBlockServer(final PlayerInteractEvent.RightClickBlock event) {
+        if (event.getLevel().isClientSide()) return;
+        if (event.getHand() != InteractionHand.MAIN_HAND) return;
+        if (event.getEntity().isShiftKeyDown()) return;
+
+        BlockEntity be = event.getLevel().getBlockEntity(event.getPos());
+        if (!(be instanceof RedstoneLinkBlockEntity)) return;
+
+        BlockState state = be.getBlockState();
+        Direction facing = state.getValue(RedstoneLinkBlock.FACING);
+        Vec3 hitVec = event.getHitVec().getLocation();
+        if (!SlotMath.isFaceSlotHit(event.getPos(), facing, hitVec)) return;
+
+        event.setUseBlock(TriState.FALSE);
+        event.setUseItem(TriState.FALSE);
+        event.setCancellationResult(InteractionResult.SUCCESS);
+        event.setCanceled(true);
     }
 }

@@ -2,6 +2,7 @@ package com.playerlink.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.playerlink.PlayerLinkMod;
+import com.playerlink.network.ClearAllControllerOwnersPacket;
 import com.playerlink.network.RequestControllerWhitelistPacket;
 import com.playerlink.util.ControllerOwners;
 import com.simibubi.create.content.redstone.link.controller.LinkedControllerItem;
@@ -65,7 +66,7 @@ public final class LinkedControllerScreenEvents {
             layoutValid = true;
             if (!layoutLogged) {
                 layoutLogged = true;
-                PlayerLinkMod.LOGGER.info("[PlayerLink] Controller layout FALLBACK; freq slots <6 distinct x. xs={}", xs);
+                PlayerLinkMod.LOGGER.info("[PlayerLink] Controller layout FALLBACK; xs={}", xs);
             }
             return;
         }
@@ -75,7 +76,8 @@ public final class LinkedControllerScreenEvents {
         for (int i = 0; i < ControllerOwners.SLOT_COUNT; i++) {
             faceX[i] = leftPos + sortedXs.get(i);
         }
-        faceY = topPos + maxFreqSlotY + 22;
+        // Below Create's bottom strip (textbox+trash+check). +50 clears it.
+        faceY = topPos + maxFreqSlotY + 50;
         layoutValid = true;
 
         if (!layoutLogged) {
@@ -151,6 +153,22 @@ public final class LinkedControllerScreenEvents {
                 }
             }
         }
+
+        // Trash button click → server clears ALL face owners too.
+        if (isTrashButtonClick(lcs, mx, my)) {
+            PacketDistributor.sendToServer(ClearAllControllerOwnersPacket.INSTANCE);
+        }
+    }
+
+    private static boolean isTrashButtonClick(LinkedControllerScreen screen, double mx, double my) {
+        int leftPos = screen.getGuiLeft();
+        int topPos = screen.getGuiTop();
+        int imageW = screen.getXSize();
+        int imageH = screen.getYSize();
+        int trashX = leftPos + imageW - 44;
+        int trashY = topPos + imageH + 4;
+        return mx >= trashX && mx < trashX + 18
+            && my >= trashY && my < trashY + 18;
     }
 
     private static ItemStack findHeldController(Minecraft mc) {

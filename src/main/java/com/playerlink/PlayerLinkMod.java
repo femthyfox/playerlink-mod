@@ -16,11 +16,13 @@ public class PlayerLinkMod {
 
     public PlayerLinkMod(IEventBus modBus) {
         LOGGER.info("[PlayerLink] === BUILD-MARKER-2026-05-25-V2 === Constructor starting");
-        
+
+        com.playerlink.util.Probe3.run();
+
         modBus.addListener(this::commonSetup);
 
         LOGGER.info("[PlayerLink] Constructor: registered commonSetup listener");
-    
+
         NeoForge.EVENT_BUS.register(com.playerlink.server.ServerEvents.class);
 
         if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) {

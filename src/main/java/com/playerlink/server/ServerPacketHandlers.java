@@ -112,7 +112,26 @@ public final class ServerPacketHandlers {
             } else {
                 ControllerOwners.set(controller, slot, null);
             }
+
+            // Re-open the controller GUI so the player isn't kicked out to world.
+            playerlink$reopenController(sp, controller);
         });
+    }
+
+    /**
+     * Re-open Create's LinkedController GUI for the player by calling the
+     * item's use() method (what right-clicking does). Wrapped in try/catch.
+     */
+    private static void playerlink$reopenController(ServerPlayer sp, ItemStack controller) {
+        try {
+            InteractionHand hand =
+                sp.getItemInHand(InteractionHand.MAIN_HAND) == controller
+                    ? InteractionHand.MAIN_HAND
+                    : InteractionHand.OFF_HAND;
+            controller.getItem().use(sp.level(), sp, hand);
+        } catch (Throwable t) {
+            PlayerLinkMod.LOGGER.warn("[PlayerLink] reopenController failed", t);
+        }
     }
 
     public static void handleClearAllControllerOwners(final ClearAllControllerOwnersPacket pkt, final IPayloadContext ctx) {

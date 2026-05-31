@@ -1,4 +1,3 @@
-java
 package com.playerlink.util;
 
 import javax.annotation.Nullable;

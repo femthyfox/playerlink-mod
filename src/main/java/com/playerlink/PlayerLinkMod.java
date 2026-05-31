@@ -21,8 +21,6 @@ public class PlayerLinkMod {
 
         LOGGER.info("[PlayerLink] Constructor: registered commonSetup listener");
     
-        com.playerlink.util.ClassProbe.probe();
-
         NeoForge.EVENT_BUS.register(com.playerlink.server.ServerEvents.class);
 
         if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) {

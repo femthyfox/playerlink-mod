@@ -1,5 +1,6 @@
 {
   "playerlink.gui.select_owner.title": "Select Redstone Link Owner",
+  "playerlink.gui.select_owner.controller_title": "Select Controller Slot Owner",
   "playerlink.gui.select_owner.search": "Search whitelisted players...",
   "playerlink.gui.select_owner.none": "No Owner (vanilla shared frequency)",
   "playerlink.gui.select_owner.current": "Current Owner: %s",
@@ -15,6 +16,8 @@
   "playerlink.tooltip.shift_right_click": "Sneak + Right-click with empty hand to set owner",
   "playerlink.face_slot.title": "Player Frequency",
   "playerlink.face_slot.sub": "Click to open",
+  "playerlink.controller.slot_tooltip": "Player Frequency for this column",
+  "playerlink.controller.slot_tooltip_none": "Click to assign a player owner",
   "key.playerlink.open_owner_gui": "Open Redstone Link Owner GUI",
   "key.categories.playerlink": "Player-Linked Redstone"
 }

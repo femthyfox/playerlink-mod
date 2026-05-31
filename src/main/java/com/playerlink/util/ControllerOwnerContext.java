@@ -6,7 +6,7 @@ import java.util.UUID;
 /**
  * Thread-local stash for the "currently-transmitting controller slot owner".
  * Lives in com.playerlink.util (NOT com.playerlink.mixin) because the mixin
- * package may only contain mixin classes — putting helpers there triggers
+ * package may only contain mixin classes -- putting helpers there triggers
  * IllegalClassLoadError at runtime.
  */
 public final class ControllerOwnerContext {

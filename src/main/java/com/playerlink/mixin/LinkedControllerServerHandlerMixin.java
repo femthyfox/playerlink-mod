@@ -20,7 +20,7 @@ import java.util.UUID;
 /**
  * Mixin into Create's {@code LinkedControllerServerHandler#receivePressed}.
  *
- * <p>Create does NOT pass the slot index server-side — only the
+ * <p>Create does NOT pass the slot index server-side -- only the
  * frequency-items list. We reconstruct which controller slot fired the
  * event by comparing that list against each of the player's 6 controller
  * slots' stored frequency items, then push the slot's owner UUID into
@@ -28,7 +28,7 @@ import java.util.UUID;
  * stamp every produced Frequency with it.
  *
  * <p>The reflective lookup of Create's per-slot frequency-items method is
- * cached the first time it succeeds — we never reflect twice on the
+ * cached the first time it succeeds -- we never reflect twice on the
  * hot path of every button press.
  */
 @Mixin(value = com.simibubi.create.content.redstone.link.controller.LinkedControllerServerHandler.class,
@@ -40,7 +40,7 @@ public abstract class LinkedControllerServerHandlerMixin {
             "getFrequencyItems", "getFrequencyItemsFor", "getNetworkKey"
     };
 
-    /** Resolved method handle — cached after first successful lookup. */
+    /** Resolved method handle -- cached after first successful lookup. */
     private static volatile Method CACHED_SLOT_ITEMS_METHOD = null;
     private static volatile boolean LOOKUP_RESOLVED = false;
 
@@ -48,7 +48,7 @@ public abstract class LinkedControllerServerHandlerMixin {
     private static void playerlink$tagOwnerOnPressHead(LevelAccessor level, BlockPos pos, UUID uuid,
                                                        List<ItemStack> items, boolean pressed,
                                                        CallbackInfo ci) {
-        PlayerLinkApi.endTransmit(); // defensive — clear any stale context
+        PlayerLinkApi.endTransmit(); // defensive -- clear any stale context
         try {
             if (level == null || uuid == null || items == null) return;
             MinecraftServer server = level.getServer();

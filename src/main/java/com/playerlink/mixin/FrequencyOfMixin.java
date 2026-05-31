@@ -16,7 +16,7 @@ import java.util.UUID;
  * {@link PlayerLinkApi#beginTransmit(UUID)} and stamps the produced
  * Frequency with it.
  *
- * <p>This is the central interception point — any code that wraps a Create
+ * <p>This is the central interception point -- any code that wraps a Create
  * emit call with {@code beginTransmit}/{@code endTransmit} automatically
  * gets owner-isolated frequencies WITHOUT having to touch the Frequency
  * object itself.

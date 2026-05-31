@@ -36,7 +36,7 @@ public abstract class FrequencyMixin implements IFrequencyOwner {
     @Inject(method = "equals", at = @At("HEAD"), cancellable = true, remap = false)
     private void playerlink$equals(Object other, CallbackInfoReturnable<Boolean> cir) {
         if (!(other instanceof IFrequencyOwner fo)) {
-            // Different class entirely – let original method handle it.
+            // Different class entirely - let original method handle it.
             return;
         }
         UUID a = this.playerlink$owner;

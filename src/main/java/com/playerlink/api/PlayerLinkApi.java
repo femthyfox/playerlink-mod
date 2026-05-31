@@ -14,13 +14,13 @@ import java.util.UUID;
  * Single static entry point for everything related to "who owns this
  * frequency". Internal callers (mixins, packet handlers, renderers,
  * future emitter items) should ONLY talk to PlayerLink through this
- * class — that way the underlying storage layout can evolve without
+ * class -- that way the underlying storage layout can evolve without
  * breaking call sites.
  *
  * <h2>How to add a new ownable item (3 steps)</h2>
  *
  * <ol>
- *   <li><b>Storage</b> — pick one based on your item's needs:
+ *   <li><b>Storage</b> -- pick one based on your item's needs:
  *     <ul>
  *       <li>Single owner per stack: {@link #readStackOwner} /
  *           {@link #writeStackOwner}.</li>
@@ -31,18 +31,22 @@ import java.util.UUID;
  *           {@link #writeBlockOwner}.</li>
  *     </ul>
  *   </li>
- *   <li><b>UI</b> — reuse {@code PlayerSelectScreen} (block mode for
+ *   <li><b>UI</b> -- reuse {@code PlayerSelectScreen} (block mode for
  *       BEs, controller-slot mode for stacks). Send your own packet on
  *       Assign that routes to the right write method here.</li>
- *   <li><b>Emit-side mixin</b> — wrap the call into Create's emit code
+ *   <li><b>Emit-side mixin</b> -- wrap the call into Create's emit code
  *       with {@link #beginTransmit}/{@link #endTransmit}:
  *       <pre>{@code
  *   PlayerLinkApi.beginTransmit(PlayerLinkApi.readStackOwner(stack));
- *   try { /* call Create emit */ } finally { PlayerLinkApi.endTransmit(); }
+ *   try {
+ *       // ... call Create emit here ...
+ *   } finally {
+ *       PlayerLinkApi.endTransmit();
+ *   }
  *       }</pre>
  *       {@link com.playerlink.mixin.FrequencyOfMixin} reads the
  *       thread-local at the end of {@code Frequency.of(...)} and
- *       stamps every produced frequency with the active owner — so you
+ *       stamps every produced frequency with the active owner -- so you
  *       never have to touch the Frequency object yourself.</li>
  * </ol>
  *
@@ -54,7 +58,7 @@ public final class PlayerLinkApi {
     private PlayerLinkApi() {}
 
     // ════════════════════════════════════════════════════════════════
-    //   FREQUENCY STAMPING — used by emit-mixins and receive-mixins
+    //   FREQUENCY STAMPING -- used by emit-mixins and receive-mixins
     // ════════════════════════════════════════════════════════════════
 
     /**
@@ -73,7 +77,7 @@ public final class PlayerLinkApi {
     }
 
     // ════════════════════════════════════════════════════════════════
-    //   BLOCK-ENTITY OWNERSHIP — links + future emitter blocks
+    //   BLOCK-ENTITY OWNERSHIP -- links + future emitter blocks
     // ════════════════════════════════════════════════════════════════
 
     /** Returns the owner UUID stored on this BE, or {@code null}. */
@@ -88,7 +92,7 @@ public final class PlayerLinkApi {
     }
 
     // ════════════════════════════════════════════════════════════════
-    //   SINGLE-OWNER ITEMSTACK — handheld emitters, wearables, etc.
+    //   SINGLE-OWNER ITEMSTACK -- handheld emitters, wearables, etc.
     // ════════════════════════════════════════════════════════════════
 
     @Nullable
@@ -101,7 +105,7 @@ public final class PlayerLinkApi {
     }
 
     // ════════════════════════════════════════════════════════════════
-    //   MULTI-SLOT ITEMSTACK — the Linked Controller pattern
+    //   MULTI-SLOT ITEMSTACK -- the Linked Controller pattern
     // ════════════════════════════════════════════════════════════════
 
     @Nullable
@@ -124,7 +128,7 @@ public final class PlayerLinkApi {
     }
 
     // ════════════════════════════════════════════════════════════════
-    //   TRANSMIT CONTEXT — thread-local "current emitter owner"
+    //   TRANSMIT CONTEXT -- thread-local "current emitter owner"
     // ════════════════════════════════════════════════════════════════
 
     /**

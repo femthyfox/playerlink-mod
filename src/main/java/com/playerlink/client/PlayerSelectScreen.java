@@ -24,8 +24,8 @@ import java.util.UUID;
 
 /**
  * Player-owner selection screen. Used in two modes:
- *   • block-link mode  — sends SetOwnerPacket on assign
- *   • controller mode  — sends SetControllerSlotOwnerPacket on assign,
+ *   • block-link mode  -- sends SetOwnerPacket on assign
+ *   • controller mode  -- sends SetControllerSlotOwnerPacket on assign,
  *                        and returns to the Linked Controller screen on close.
  */
 public class PlayerSelectScreen extends Screen {
@@ -33,13 +33,13 @@ public class PlayerSelectScreen extends Screen {
     // ─── PALETTE ───────────────────────────────────────────────────────────
     private static final int COL_BG_DIM        = 0xB0000000;
 
-    // Stone panel — between stone and dark-gray concrete
+    // Stone panel -- between stone and dark-gray concrete
     private static final int COL_STONE_TOP     = 0xFF8A8A8A;
     private static final int COL_STONE_BOT     = 0xFF3D3D3D;
     private static final int COL_STONE_BORDER  = 0xFF1A1A1A;
     private static final int COL_STONE_SHADOW  = 0xFF000000;
 
-    // Spruce wood — actual Minecraft spruce-plank tones
+    // Spruce wood -- actual Minecraft spruce-plank tones
     private static final int COL_SPRUCE        = 0xFF6B4F2E;
     private static final int COL_SPRUCE_HI     = 0xFF8C6A40;
     private static final int COL_SPRUCE_DARK   = 0xFF3F2A14;
@@ -52,7 +52,7 @@ public class PlayerSelectScreen extends Screen {
     private static final int COL_BRASS_BORDER  = 0xFF5A3E1B;
     private static final int COL_BRASS_HI      = 0xFFFFE49A;
 
-    // Redstone accents — deep darker red
+    // Redstone accents -- deep darker red
     private static final int COL_REDSTONE      = 0xFF7A1A1A;
     private static final int COL_REDSTONE_HI   = 0xFFA82828;
 
@@ -395,7 +395,7 @@ public class PlayerSelectScreen extends Screen {
                 }
                 name = name + "…";
             }
-            // Cream text on dark spruce — high contrast
+            // Cream text on dark spruce -- high contrast
             int textColor = isSelected ? 0xFFFFFFFF
                           : isCurrent  ? 0xFFFFE0E0
                           : COL_TEXT_LIGHT;

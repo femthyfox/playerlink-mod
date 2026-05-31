@@ -24,7 +24,7 @@ import java.util.UUID;
  * draws a hover highlight outline when the player is looking at the slot
  * (matching Create's value-box hover look).
  *
- * <p>Hot path — this is invoked once per visible link per frame. All per-frame
+ * <p>Hot path -- this is invoked once per visible link per frame. All per-frame
  * allocations have been hoisted into {@code static final} fields below.
  */
 public final class LinkFaceRenderer {
@@ -36,7 +36,7 @@ public final class LinkFaceRenderer {
 
     /**
      * Pre-baked rotation quaternions, one per facing. Computed once at
-     * class-load — avoids allocating a {@link Quaternionf} every frame
+     * class-load -- avoids allocating a {@link Quaternionf} every frame
      * for every visible link.
      */
     private static final Map<Direction, Quaternionf> ROT = new EnumMap<>(Direction.class);
@@ -106,7 +106,7 @@ public final class LinkFaceRenderer {
 
         Quaternionf q = ROT.get(facing);
         if (q != null && facing != Direction.SOUTH) {
-            // SOUTH is the identity rotation — no mulPose call needed.
+            // SOUTH is the identity rotation -- no mulPose call needed.
             pose.mulPose(q);
         }
         // Push a hair forward to avoid z-fighting with the block surface

@@ -43,7 +43,7 @@ import java.util.UUID;
  *   3. Detect clicks on the relocated trash widget so we can also wipe
  *      our owner data when the user clicks Create's "clear all" button.
  *
- * State is recomputed on every {@link ScreenEvent.Init.Post} — this fires
+ * State is recomputed on every {@link ScreenEvent.Init.Post} -- this fires
  * on first open and after every resize / screen swap, keeping us in sync
  * with whatever positions Create produces.
  */
@@ -66,17 +66,17 @@ public final class LinkedControllerScreenEvents {
     private static int     faceY        = 0;
     private static boolean layoutValid  = false;
 
-    /** Reference to Create's trash widget after relocation — used to detect clicks. */
+    /** Reference to Create's trash widget after relocation -- used to detect clicks. */
     @Nullable private static AbstractWidget trashWidgetRef = null;
 
-    /** Last screen we layout-logged for — keeps log spam down on resize/return. */
+    /** Last screen we layout-logged for -- keeps log spam down on resize/return. */
     private static WeakReference<Screen> lastLoggedScreen = new WeakReference<>(null);
 
     // Pre-allocated tooltip components (avoids per-frame allocation while hovering).
     private static final Component TIP_OWNED = Component.literal("Player Frequency");
     private static final Component TIP_EMPTY = Component.literal("Click to assign owner");
 
-    /** Returned when the player isn't holding a controller — saves a tag copy. */
+    /** Returned when the player isn't holding a controller -- saves a tag copy. */
     private static final UUID[] EMPTY_OWNERS = new UUID[PlayerLinkApi.slotCount()];
 
     // ════════════════════════════════════════════════════════════════════
@@ -95,7 +95,7 @@ public final class LinkedControllerScreenEvents {
         // ─── (1) Inspect freq slots to derive column x's + bottom-of-row Y ──
         // LinkedControllerMenu has 12 frequency slots (6 cols × 2 rows) plus
         // the standard 36 player-inventory slots appended after them. We do
-        // NOT rely on a hard-coded "player inv starts at imageH-82" — instead
+        // NOT rely on a hard-coded "player inv starts at imageH-82" -- instead
         // we sort all slots by y and treat the lowest 12 as freq slots and
         // anything below that as player inventory.
         List<Slot> allSlots = new ArrayList<>(lcs.getMenu().slots);
@@ -175,12 +175,12 @@ public final class LinkedControllerScreenEvents {
             sideY += w.getHeight() + SIDEBAR_SPACING;
         }
 
-        // Log layout ONCE per fresh screen instance — not on every resize
+        // Log layout ONCE per fresh screen instance -- not on every resize
         // or PlayerSelectScreen-return (which re-fires Init.Post).
         if (lastLoggedScreen.get() != lcs) {
             lastLoggedScreen = new WeakReference<>(lcs);
             PlayerLinkMod.LOGGER.info(
-                "[PlayerLink] LinkedController layout — leftPos={} topPos={} faceY={} "
+                "[PlayerLink] LinkedController layout -- leftPos={} topPos={} faceY={} "
               + "faceX={} cols={} freqRowBottom(rel)={} relocatedWidgets={} trash?={}",
                 leftPos, topPos, faceY,
                 Arrays.toString(faceX), colXs, freqRowBottomRel,
@@ -217,7 +217,7 @@ public final class LinkedControllerScreenEvents {
             boolean hover = mouseX >= x && mouseX < x + FACE_SIZE
                          && mouseY >= y && mouseY < y + FACE_SIZE;
 
-            // Slot well — 1-px dark border + slot-fill (matches vanilla slot look).
+            // Slot well -- 1-px dark border + slot-fill (matches vanilla slot look).
             g.fill(x - FACE_WELL_PAD, y - FACE_WELL_PAD,
                    x + FACE_SIZE + FACE_WELL_PAD, y + FACE_SIZE + FACE_WELL_PAD,
                    0xFF373737);
@@ -272,7 +272,7 @@ public final class LinkedControllerScreenEvents {
         }
 
         // Trash-widget click → also wipe all our slot owners. We do NOT
-        // cancel — Create's own trash widget still fires and clears its
+        // cancel -- Create's own trash widget still fires and clears its
         // own frequency items as usual.
         if (trashWidgetRef != null && isInside(trashWidgetRef, mx, my)) {
             PacketDistributor.sendToServer(ClearAllControllerOwnersPacket.INSTANCE);

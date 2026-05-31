@@ -13,14 +13,14 @@ import java.util.UUID;
  * {@value #KEY} inside the stack's vanilla {@code CUSTOM_DATA} component.
  *
  * <p>Use this for any item that needs to emit/receive a redstone-link
- * frequency on behalf of <b>one</b> specific player — e.g. a handheld
+ * frequency on behalf of <b>one</b> specific player -- e.g. a handheld
  * emitter, a worn trigger, or (future) a Create Aeronautics typewriter.
  *
  * <p>If your item needs PER-SLOT ownership (the Linked Controller's
  * 6 button columns), use {@link ControllerOwners} instead.
  *
  * <p>Always go through {@link com.playerlink.api.PlayerLinkApi} from
- * outside this package — the storage layout here may evolve.
+ * outside this package -- the storage layout here may evolve.
  */
 public final class StackOwners {
 

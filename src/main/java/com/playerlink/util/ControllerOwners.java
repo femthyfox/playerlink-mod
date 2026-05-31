@@ -11,7 +11,7 @@ import java.util.UUID;
 /**
  * Read/write the per-slot player-owner UUIDs stored on a Linked
  * Controller ItemStack. There are {@value #SLOT_COUNT} slots (one per
- * button column). A null/missing UUID means "no owner — transmits as
+ * button column). A null/missing UUID means "no owner -- transmits as
  * the public shared frequency".
  *
  * <p>Storage layout inside the vanilla {@code CUSTOM_DATA} component:
@@ -34,7 +34,7 @@ public final class ControllerOwners {
 
     /**
      * Pre-allocated slot key strings. Saves an {@code Integer.toString}
-     * allocation per read/write — non-trivial when the GUI is open
+     * allocation per read/write -- non-trivial when the GUI is open
      * (60 fps × 6 slots = 360 calls/s).
      */
     private static final String[] SLOT_KEYS = { "0", "1", "2", "3", "4", "5" };
@@ -59,7 +59,7 @@ public final class ControllerOwners {
      * Bulk read all {@value #SLOT_COUNT} slot owners with a single
      * {@code copyTag()} call. Always returns a fresh array of length
      * {@value #SLOT_COUNT} (entries may be null). Use this on render
-     * paths — calling {@link #get} six times per frame allocates six
+     * paths -- calling {@link #get} six times per frame allocates six
      * deep tag copies.
      */
     public static UUID[] getAll(ItemStack stack) {

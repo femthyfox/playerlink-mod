@@ -1,6 +1,7 @@
 package com.playerlink.mixin;
 
 import com.playerlink.api.IFrequencyOwner;
+import com.playerlink.util.ControllerOwnerContext;
 import com.simibubi.create.content.redstone.link.RedstoneLinkNetworkHandler;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;

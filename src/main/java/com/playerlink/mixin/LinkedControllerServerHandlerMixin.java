@@ -2,6 +2,7 @@ package com.playerlink.mixin;
 
 import com.playerlink.PlayerLinkMod;
 import com.playerlink.util.ControllerOwners;
+import com.playerlink.util.ControllerOwnerContext;
 import com.simibubi.create.content.redstone.link.controller.LinkedControllerItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;

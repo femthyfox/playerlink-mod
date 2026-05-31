@@ -1,20 +1,13 @@
-package com.playerlink.mixin;
+package com.playerlink.util;
 
 import javax.annotation.Nullable;
 import java.util.UUID;
 
 /**
  * Thread-local stash for the "currently-transmitting controller slot owner".
- *
- * Flow:
- *   LinkedControllerServerHandlerMixin.receivePressed(HEAD)  → set()
- *   ↓ original receivePressed body runs, eventually creates Frequency objects
- *   FrequencyOfMixin.of(stack)                                → reads
- *   ↓ tag and return the Frequency
- *   LinkedControllerServerHandlerMixin.receivePressed(RETURN) → clear()
- *
- * Server-only. Always cleared in a finally block so we never leak state
- * across packets even if Create throws.
+ * Lives in com.playerlink.util (NOT com.playerlink.mixin) because the mixin
+ * package may only contain mixin classes — putting helpers there triggers
+ * IllegalClassLoadError at runtime.
  */
 public final class ControllerOwnerContext {
 

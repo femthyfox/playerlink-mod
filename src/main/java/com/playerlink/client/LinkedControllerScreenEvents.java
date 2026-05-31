@@ -40,17 +40,26 @@ public final class LinkedControllerScreenEvents {
 
     private static final int FACE_SIZE = 16;
     private static final int FACE_GAP  = 4;
+    private static boolean playerlink$layoutLogged = false;
 
-    /** Returns face slot x-positions [0..5] and y-position at index 6. */
     private static int[] computeLayout(AbstractContainerScreen<?> screen) {
         int leftPos = screen.getGuiLeft();
         int topPos  = screen.getGuiTop();
         int imageW  = screen.getXSize();
         int imageH  = screen.getYSize();
 
+        if (!playerlink$layoutLogged) {
+            playerlink$layoutLogged = true;
+            PlayerLinkMod.LOGGER.info("[PlayerLink] LinkedController layout: leftPos={} topPos={} imageW={} imageH={}",
+                    leftPos, topPos, imageW, imageH);
+        }
+
         int totalW = ControllerOwners.SLOT_COUNT * FACE_SIZE + (ControllerOwners.SLOT_COUNT - 1) * FACE_GAP;
         int startX = leftPos + (imageW - totalW) / 2;
-        int y      = topPos + imageH + 4;
+        // Place the face row just below the 2 rows of frequency slots and
+        // just above (or overlapping) the textbox/save strip. 58 is a tuned
+        // fixed offset; if your imageH differs, send me the log line above.
+        int y      = topPos + 58;
 
         int[] r = new int[ControllerOwners.SLOT_COUNT + 1];
         for (int i = 0; i < ControllerOwners.SLOT_COUNT; i++) {

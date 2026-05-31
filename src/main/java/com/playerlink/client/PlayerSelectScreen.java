@@ -34,18 +34,18 @@ public class PlayerSelectScreen extends Screen {
     // ─── PALETTE (stone + spruce + redstone + brass) ───────────────────────
     private static final int COL_BG_DIM        = 0xB0000000;
 
-    // Stone panel
-    private static final int COL_STONE_TOP     = 0xFFCFCFCF;
-    private static final int COL_STONE_BOT     = 0xFF8C8C8C;
-    private static final int COL_STONE_BORDER  = 0xFF3D3D3D;
-    private static final int COL_STONE_SHADOW  = 0xFF1F1F1F;
+    // Stone panel — between stone and dark-gray concrete
+    private static final int COL_STONE_TOP     = 0xFF8A8A8A;
+    private static final int COL_STONE_BOT     = 0xFF3D3D3D;
+    private static final int COL_STONE_BORDER  = 0xFF1A1A1A;
+    private static final int COL_STONE_SHADOW  = 0xFF000000;
 
-    // Spruce wood
-    private static final int COL_SPRUCE        = 0xFFC09767;
-    private static final int COL_SPRUCE_HI     = 0xFFD7B289;
-    private static final int COL_SPRUCE_DARK   = 0xFF6A4926;
-    private static final int COL_SPRUCE_LIGHT  = 0xFFE6CDA9;
-    private static final int COL_SPRUCE_FACE_WELL = 0xFFE6CDA9;
+    // Spruce wood — actual Minecraft spruce-plank tones
+    private static final int COL_SPRUCE        = 0xFF6B4F2E;
+    private static final int COL_SPRUCE_HI     = 0xFF8C6A40;
+    private static final int COL_SPRUCE_DARK   = 0xFF3F2A14;
+    private static final int COL_SPRUCE_LIGHT  = 0xFFA88256;
+    private static final int COL_SPRUCE_FACE_WELL = 0xFFA88256;
 
     // Brass (buttons)
     private static final int COL_BRASS_TOP     = 0xFFE6C572;
@@ -53,9 +53,9 @@ public class PlayerSelectScreen extends Screen {
     private static final int COL_BRASS_BORDER  = 0xFF5A3E1B;
     private static final int COL_BRASS_HI      = 0xFFFFE49A;
 
-    // Redstone accents
-    private static final int COL_REDSTONE      = 0xFFB02B2B;
-    private static final int COL_REDSTONE_HI   = 0xFFE03A3A;
+    // Redstone accents — deep darker red
+    private static final int COL_REDSTONE      = 0xFF7A1A1A;
+    private static final int COL_REDSTONE_HI   = 0xFFA82828;
 
     // Text
     private static final int COL_TEXT_DARK     = 0xFF1A0F05;
@@ -266,12 +266,13 @@ public class PlayerSelectScreen extends Screen {
 
     @Override
     public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        g.fill(0, 0, width, height, COL_BG_DIM);
+        // No-op. Single dim drawn in render() to avoid the double-dim caused
+        // by vanilla Screen.render() calling renderBackground a second time.
     }
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float pt) {
-        renderBackground(g, mouseX, mouseY, pt);
+        g.fill(0, 0, width, height, COL_BG_DIM);
 
         // ── Drop shadow under panel
         g.fill(panelX + 3, panelY + 4, panelX + panelW + 3, panelY + panelH + 4, 0x90000000);
@@ -290,7 +291,7 @@ public class PlayerSelectScreen extends Screen {
             g.fill(tbx, gy, tbx + tbw, gy + 1, COL_SPRUCE);
         }
         // Title bar border
-        g.fill(tbx, tby, tbx + tbw, tby + 1, 0xFFD9B589);
+        g.fill(tbx, tby, tbx + tbw, tby + 1, COL_SPRUCE_LIGHT);
         g.fill(tbx, tby + titleBarH - 1, tbx + tbw, tby + titleBarH, COL_SPRUCE_DARK);
 
         // Title text (cream, with shadow) — left aligned
@@ -299,23 +300,23 @@ public class PlayerSelectScreen extends Screen {
         // ── Owner-info strip BELOW the title bar (no overlap with title)
         int stripY = tby + titleBarH + 2;
         int stripH = 14;
-        drawInsetBox(g, tbx, stripY, tbw, stripH, 0xFF6F6F6F, COL_STONE_TOP);
+        drawInsetBox(g, tbx, stripY, tbw, stripH, 0xFF4A4A4A, COL_STONE_TOP);
 
         Component cur = (selectedUuid == null)
                 ? Component.translatable("playerlink.gui.select_owner.current.none")
                 : Component.translatable("playerlink.gui.select_owner.current",
                         selectedName == null ? selectedUuid.toString().substring(0, 8) : selectedName);
-        int curColor = selectedUuid == null ? 0xFF555555 : 0xFFFFFFFF;
+        int curColor = selectedUuid == null ? 0xFFBBBBBB : 0xFFFFFFFF;
         int curX = panelX + (panelW - font.width(cur)) / 2;
-        g.drawString(font, cur, curX, stripY + 3, curColor, selectedUuid != null);
+        g.drawString(font, cur, curX, stripY + 3, curColor, true);
 
         // ── Search field frame (dark inset)
         int sx = searchBox.getX() - 2, sy = searchBox.getY() - 2;
         int sw = searchBox.getWidth() + 4, sh = 20;
-        drawInsetBox(g, sx, sy, sw, sh, 0xFF2A2A2A, 0xFFB0B0B0);
+        drawInsetBox(g, sx, sy, sw, sh, 0xFF1F1F1F, 0xFFB0B0B0);
 
         // ── Grid background (recessed darker stone with decorative pattern)
-        drawInsetBox(g, gridX - 4, gridY - 4, gridW + 8, gridH + 8, 0xFF6F6F6F, COL_STONE_TOP);
+        drawInsetBox(g, gridX - 4, gridY - 4, gridW + 8, gridH + 8, 0xFF4A4A4A, COL_STONE_TOP);
         drawGridDecor(g, gridX - 4, gridY - 4, gridW + 8, gridH + 8);
 
         if (filtered.isEmpty()) {
@@ -323,13 +324,13 @@ public class PlayerSelectScreen extends Screen {
             g.drawString(font, msg,
                     gridX + (gridW - font.width(msg)) / 2,
                     gridY + gridH / 2 - font.lineHeight / 2,
-                    COL_TEXT_DARK, false);
+                    COL_TEXT_LIGHT, true);
         } else {
             drawTileGrid(g, mouseX, mouseY);
         }
 
-        // ── Hint text between grid and buttons — drop-shadowed white for visibility
-        Component hint = Component.literal("Click a player to select  ·  Click again to confirm");
+        // ── Hint text between grid and buttons
+        Component hint = Component.literal("Click a player to select");
         int hintX = panelX + (panelW - font.width(hint)) / 2;
         int hintY = panelY + panelH - 40;
         g.drawString(font, hint, hintX, hintY, 0xFFFFFFFF, true);
@@ -399,11 +400,11 @@ public class PlayerSelectScreen extends Screen {
                 }
                 name = name + "…";
             }
-            // Light text on dark spruce — good contrast
+            // Cream text on dark spruce — high contrast
             int textColor = isSelected ? 0xFFFFFFFF
                           : isCurrent  ? 0xFFFFE0E0
-                          : COL_TEXT_DARK;
-            g.drawString(font, name, tx + (TILE_W - font.width(name)) / 2, ty + FACE_SIZE + 10, textColor, false);
+                          : COL_TEXT_LIGHT;
+            g.drawString(font, name, tx + (TILE_W - font.width(name)) / 2, ty + FACE_SIZE + 10, textColor, true);
 
             // Redstone-glow dot for current owner
             if (isCurrent) {
@@ -443,9 +444,9 @@ public class PlayerSelectScreen extends Screen {
         // Stone gradient interior
         g.fillGradient(x + 2, y + 2, x + w - 2, y + h - 2, COL_STONE_TOP, COL_STONE_BOT);
 
-        // Inner highlight
-        g.fill(x + 2, y + 2, x + w - 2, y + 3, 0x60FFFFFF);
-        g.fill(x + 2, y + 2, x + 3, y + h - 2, 0x60FFFFFF);
+        // Inner top/left highlight
+        g.fill(x + 2, y + 2, x + w - 2, y + 3, 0x40FFFFFF);
+        g.fill(x + 2, y + 2, x + 3, y + h - 2, 0x40FFFFFF);
     }
 
     private void drawInsetBox(GuiGraphics g, int x, int y, int w, int h, int fillColor, int lightColor) {
@@ -482,9 +483,9 @@ public class PlayerSelectScreen extends Screen {
                 int y2 = Math.min(by + brickH, yEnd);
                 if (x2 - x1 <= 1 || y2 - y1 <= 1) continue;
                 // Brick highlight (subtle, lighter than bg)
-                g.fill(x1, y1, x2, y1 + 1, 0x18FFFFFF);
+                g.fill(x1, y1, x2, y1 + 1, 0x22FFFFFF);
                 // Brick shadow (subtle, darker than bg)
-                g.fill(x1, y2 - 1, x2, y2, 0x18000000);
+                g.fill(x1, y2 - 1, x2, y2, 0x22000000);
             }
         }
 

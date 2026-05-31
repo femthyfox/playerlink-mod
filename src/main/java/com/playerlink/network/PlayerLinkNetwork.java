@@ -11,7 +11,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 @EventBusSubscriber(modid = PlayerLinkMod.MODID, bus = EventBusSubscriber.Bus.MOD)
 public class PlayerLinkNetwork {
 
-    public static final String PROTOCOL_VERSION = "1";
+    public static final String PROTOCOL_VERSION = "2";
 
     @SubscribeEvent
     public static void register(final RegisterPayloadHandlersEvent event) {
@@ -24,32 +24,44 @@ public class PlayerLinkNetwork {
                 RequestWhitelistPacket.STREAM_CODEC,
                 ServerPacketHandlers::handleRequestWhitelist
         );
-        PlayerLinkMod.LOGGER.info("[PlayerLink] Registered playToServer: request_whitelist");
+        registrar.playToServer(
+                SetOwnerPacket.TYPE,
+                SetOwnerPacket.STREAM_CODEC,
+                ServerPacketHandlers::handleSetOwner
+        );
+        registrar.playToServer(
+                RequestControllerWhitelistPacket.TYPE,
+                RequestControllerWhitelistPacket.STREAM_CODEC,
+                ServerPacketHandlers::handleRequestControllerWhitelist
+        );
+        registrar.playToServer(
+                SetControllerSlotOwnerPacket.TYPE,
+                SetControllerSlotOwnerPacket.STREAM_CODEC,
+                ServerPacketHandlers::handleSetControllerSlotOwner
+        );
 
         if (FMLEnvironment.dist.isClient()) {
             try {
                 Class.forName("com.playerlink.network.ClientNetwork")
                         .getMethod("registerClient", PayloadRegistrar.class)
                         .invoke(null, registrar);
-                PlayerLinkMod.LOGGER.info("[PlayerLink] Registered playToClient: whitelist_response (CLIENT)");
+                PlayerLinkMod.LOGGER.info("[PlayerLink] Registered playToClient handlers (CLIENT)");
             } catch (Throwable t) {
                 PlayerLinkMod.LOGGER.error("[PlayerLink] Failed to register client handler", t);
             }
         } else {
+            // Server-side stubs so the packet types are known on dedicated servers.
             registrar.playToClient(
                     WhitelistResponsePacket.TYPE,
                     WhitelistResponsePacket.STREAM_CODEC,
                     (pkt, ctx) -> {}
             );
-            PlayerLinkMod.LOGGER.info("[PlayerLink] Registered playToClient: whitelist_response (SERVER STUB)");
+            registrar.playToClient(
+                    ControllerWhitelistResponsePacket.TYPE,
+                    ControllerWhitelistResponsePacket.STREAM_CODEC,
+                    (pkt, ctx) -> {}
+            );
         }
-
-        registrar.playToServer(
-                SetOwnerPacket.TYPE,
-                SetOwnerPacket.STREAM_CODEC,
-                ServerPacketHandlers::handleSetOwner
-        );
-        PlayerLinkMod.LOGGER.info("[PlayerLink] Registered playToServer: set_owner");
 
         PlayerLinkMod.LOGGER.info("[PlayerLink] <<< register() FINISHED");
     }

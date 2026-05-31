@@ -2,14 +2,21 @@ package com.playerlink.server;
 
 import com.playerlink.PlayerLinkMod;
 import com.playerlink.api.IOwnedLink;
+import com.playerlink.network.ControllerWhitelistResponsePacket;
+import com.playerlink.network.RequestControllerWhitelistPacket;
 import com.playerlink.network.RequestWhitelistPacket;
+import com.playerlink.network.SetControllerSlotOwnerPacket;
 import com.playerlink.network.SetOwnerPacket;
 import com.playerlink.network.WhitelistResponsePacket;
+import com.playerlink.util.ControllerOwners;
 import com.mojang.authlib.GameProfile;
 import com.simibubi.create.content.redstone.link.RedstoneLinkBlockEntity;
+import com.simibubi.create.content.redstone.link.controller.LinkedControllerItem;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.UserWhiteList;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -51,25 +58,7 @@ public final class ServerPacketHandlers {
             }
 
             UUID currentOwner = ((IOwnedLink) be).playerlink$getOwner();
-
-            List<WhitelistResponsePacket.Entry> entries = new ArrayList<>();
-            Set<UUID> seen = new HashSet<>();
-
-            UserWhiteList whitelist = server.getPlayerList().getWhiteList();
-            for (String name : whitelist.getUserList()) {
-                Optional<GameProfile> profileOpt = server.getProfileCache() == null
-                        ? Optional.empty()
-                        : server.getProfileCache().get(name);
-                if (profileOpt.isPresent() && seen.add(profileOpt.get().getId())) {
-                    entries.add(new WhitelistResponsePacket.Entry(profileOpt.get().getId(), profileOpt.get().getName()));
-                }
-            }
-
-            for (ServerPlayer online : server.getPlayerList().getPlayers()) {
-                if (seen.add(online.getUUID())) {
-                    entries.add(new WhitelistResponsePacket.Entry(online.getUUID(), online.getGameProfile().getName()));
-                }
-            }
+            List<WhitelistResponsePacket.Entry> entries = collectWhitelist(server);
 
             PlayerLinkMod.LOGGER.info("[PlayerLink] Sending {} entries to {}", entries.size(), sp.getName().getString());
 
@@ -94,25 +83,8 @@ public final class ServerPacketHandlers {
 
             Optional<UUID> newOwner = pkt.newOwner();
             if (newOwner.isPresent()) {
-                UUID candidate = newOwner.get();
-                boolean ok = false;
-
-                UserWhiteList whitelist = server.getPlayerList().getWhiteList();
-                for (String name : whitelist.getUserList()) {
-                    Optional<GameProfile> p = server.getProfileCache() == null
-                            ? Optional.empty()
-                            : server.getProfileCache().get(name);
-                    if (p.isPresent() && p.get().getId().equals(candidate)) { ok = true; break; }
-                }
-
-                if (!ok) {
-                    for (ServerPlayer online : server.getPlayerList().getPlayers()) {
-                        if (online.getUUID().equals(candidate)) { ok = true; break; }
-                    }
-                }
-
-                if (!ok) return;
-                ((IOwnedLink) link).playerlink$setOwner(candidate);
+                if (!validateOwner(server, newOwner.get())) return;
+                ((IOwnedLink) link).playerlink$setOwner(newOwner.get());
             } else {
                 ((IOwnedLink) link).playerlink$setOwner(null);
             }
@@ -120,5 +92,98 @@ public final class ServerPacketHandlers {
             PlayerLinkMod.LOGGER.info("[PlayerLink] {} set owner of link@{} to {}",
                     sp.getName().getString(), pkt.blockPos(), newOwner.orElse(null));
         });
+    }
+
+    public static void handleRequestControllerWhitelist(final RequestControllerWhitelistPacket pkt, final IPayloadContext ctx) {
+        ctx.enqueueWork(() -> {
+            if (!(ctx.player() instanceof ServerPlayer sp)) return;
+            MinecraftServer server = sp.getServer();
+            if (server == null) return;
+            int slot = pkt.slotIndex();
+            if (slot < 0 || slot >= ControllerOwners.SLOT_COUNT) return;
+
+            ItemStack controller = findController(sp);
+            if (controller.isEmpty()) {
+                PlayerLinkMod.LOGGER.warn("[PlayerLink] {} requested controller whitelist but is not holding one", sp.getName().getString());
+                return;
+            }
+
+            UUID currentOwner = ControllerOwners.get(controller, slot);
+            List<WhitelistResponsePacket.Entry> entries = collectWhitelist(server);
+
+            PacketDistributor.sendToPlayer(sp, new ControllerWhitelistResponsePacket(
+                    slot,
+                    Optional.ofNullable(currentOwner),
+                    entries
+            ));
+        });
+    }
+
+    public static void handleSetControllerSlotOwner(final SetControllerSlotOwnerPacket pkt, final IPayloadContext ctx) {
+        ctx.enqueueWork(() -> {
+            if (!(ctx.player() instanceof ServerPlayer sp)) return;
+            MinecraftServer server = sp.getServer();
+            if (server == null) return;
+            int slot = pkt.slotIndex();
+            if (slot < 0 || slot >= ControllerOwners.SLOT_COUNT) return;
+
+            ItemStack controller = findController(sp);
+            if (controller.isEmpty()) return;
+
+            Optional<UUID> newOwner = pkt.newOwner();
+            if (newOwner.isPresent()) {
+                if (!validateOwner(server, newOwner.get())) return;
+                ControllerOwners.set(controller, slot, newOwner.get());
+            } else {
+                ControllerOwners.set(controller, slot, null);
+            }
+
+            PlayerLinkMod.LOGGER.info("[PlayerLink] {} set controller slot {} owner to {}",
+                    sp.getName().getString(), slot, newOwner.orElse(null));
+        });
+    }
+
+    private static ItemStack findController(ServerPlayer sp) {
+        ItemStack main = sp.getItemInHand(InteractionHand.MAIN_HAND);
+        if (main.getItem() instanceof LinkedControllerItem) return main;
+        ItemStack off = sp.getItemInHand(InteractionHand.OFF_HAND);
+        if (off.getItem() instanceof LinkedControllerItem) return off;
+        return ItemStack.EMPTY;
+    }
+
+    private static List<WhitelistResponsePacket.Entry> collectWhitelist(MinecraftServer server) {
+        List<WhitelistResponsePacket.Entry> entries = new ArrayList<>();
+        Set<UUID> seen = new HashSet<>();
+
+        UserWhiteList whitelist = server.getPlayerList().getWhiteList();
+        for (String name : whitelist.getUserList()) {
+            Optional<GameProfile> profileOpt = server.getProfileCache() == null
+                    ? Optional.empty()
+                    : server.getProfileCache().get(name);
+            if (profileOpt.isPresent() && seen.add(profileOpt.get().getId())) {
+                entries.add(new WhitelistResponsePacket.Entry(profileOpt.get().getId(), profileOpt.get().getName()));
+            }
+        }
+
+        for (ServerPlayer online : server.getPlayerList().getPlayers()) {
+            if (seen.add(online.getUUID())) {
+                entries.add(new WhitelistResponsePacket.Entry(online.getUUID(), online.getGameProfile().getName()));
+            }
+        }
+        return entries;
+    }
+
+    private static boolean validateOwner(MinecraftServer server, UUID candidate) {
+        UserWhiteList whitelist = server.getPlayerList().getWhiteList();
+        for (String name : whitelist.getUserList()) {
+            Optional<GameProfile> p = server.getProfileCache() == null
+                    ? Optional.empty()
+                    : server.getProfileCache().get(name);
+            if (p.isPresent() && p.get().getId().equals(candidate)) return true;
+        }
+        for (ServerPlayer online : server.getPlayerList().getPlayers()) {
+            if (online.getUUID().equals(candidate)) return true;
+        }
+        return false;
     }
 }

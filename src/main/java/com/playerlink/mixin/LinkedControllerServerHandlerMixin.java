@@ -47,15 +47,22 @@ public abstract class LinkedControllerServerHandlerMixin {
             if (sp == null) return;
 
             ItemStack ctrl = playerlink$findController(sp);
-            if (ctrl.isEmpty()) return;
+            if (ctrl.isEmpty()) {
+                PlayerLinkMod.LOGGER.info("[PlayerLink] receivePressed: player {} has no controller in hand", sp.getName().getString());
+                return;
+            }
 
             int slot = playerlink$findSlotByItems(ctrl, items);
-            if (slot < 0) return;
+            if (slot < 0) {
+                PlayerLinkMod.LOGGER.info("[PlayerLink] receivePressed: could NOT match items to a slot (slot lookup failed)");
+                return;
+            }
 
             UUID owner = ControllerOwners.get(ctrl, slot);
+            PlayerLinkMod.LOGGER.info("[PlayerLink] receivePressed: matched slot={}, owner={}", slot, owner);
             if (owner != null) ControllerOwnerContext.set(owner);
         } catch (Throwable t) {
-            PlayerLinkMod.LOGGER.debug("[PlayerLink] receivePressed HEAD swallowed", t);
+            PlayerLinkMod.LOGGER.warn("[PlayerLink] receivePressed HEAD threw", t);
             ControllerOwnerContext.clear();
         }
     }
@@ -81,13 +88,13 @@ public abstract class LinkedControllerServerHandlerMixin {
      * doesn't crash us — we just silently return -1 and skip isolation.
      */
     private static int playerlink$findSlotByItems(ItemStack controller, List<ItemStack> items) {
-        // Try a handful of likely method names. If none match we return -1.
         String[] candidates = { "getFrequencyItems", "getFrequencyItemsFor", "getNetworkKey" };
         for (String methodName : candidates) {
             try {
                 java.lang.reflect.Method m =
                         LinkedControllerItem.class.getDeclaredMethod(methodName, ItemStack.class, int.class);
                 m.setAccessible(true);
+                PlayerLinkMod.LOGGER.info("[PlayerLink] slot lookup using API method '{}'", methodName);
                 for (int slot = 0; slot < ControllerOwners.SLOT_COUNT; slot++) {
                     Object result = m.invoke(null, controller, slot);
                     if (result instanceof List<?> list && playerlink$itemsMatch(list, items)) {
@@ -98,11 +105,27 @@ public abstract class LinkedControllerServerHandlerMixin {
             } catch (NoSuchMethodException ignored) {
                 // Try the next candidate
             } catch (Throwable t) {
-                PlayerLinkMod.LOGGER.debug("[PlayerLink] slot lookup failed via {}", methodName, t);
+                PlayerLinkMod.LOGGER.warn("[PlayerLink] slot lookup via {} threw", methodName, t);
                 return -1;
             }
         }
+        PlayerLinkMod.LOGGER.info("[PlayerLink] slot lookup: no candidate API matched. Tried: {}. " +
+                "Static methods on LinkedControllerItem: {}",
+                String.join(", ", candidates),
+                playerlink$listStaticMethods());
         return -1;
+    }
+
+    /** Diagnostic — lists static methods on LinkedControllerItem so we can find the right API. */
+    private static String playerlink$listStaticMethods() {
+        StringBuilder sb = new StringBuilder();
+        for (java.lang.reflect.Method m : LinkedControllerItem.class.getDeclaredMethods()) {
+            if (java.lang.reflect.Modifier.isStatic(m.getModifiers())) {
+                if (sb.length() > 0) sb.append(", ");
+                sb.append(m.getName()).append("(").append(m.getParameterCount()).append(")");
+            }
+        }
+        return sb.toString();
     }
 
     private static boolean playerlink$itemsMatch(List<?> a, List<ItemStack> b) {

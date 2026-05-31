@@ -20,6 +20,8 @@ public class PlayerLinkMod {
         modBus.addListener(this::commonSetup);
 
         LOGGER.info("[PlayerLink] Constructor: registered commonSetup listener");
+    
+        com.playerlink.util.ClassProbe.probe();
 
         NeoForge.EVENT_BUS.register(com.playerlink.server.ServerEvents.class);
 

@@ -1,0 +1,35 @@
+package com.playerlink.mixin;
+
+import com.playerlink.api.IFrequencyOwner;
+import com.simibubi.create.content.redstone.link.RedstoneLinkNetworkHandler;
+import net.minecraft.world.item.ItemStack;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+
+import java.util.UUID;
+
+/**
+ * Mixin into Frequency.of(ItemStack) to read the ThreadLocal slot owner
+ * set by LinkedControllerServerHandlerMixin and tag the returned
+ * Frequency object.
+ *
+ * If ControllerOwnerContext.get() returns null, the frequency stays
+ * "no owner" — which is what we want for block-link creation paths
+ * that don't set the context.
+ */
+@Mixin(targets = "com.simibubi.create.content.redstone.link.RedstoneLinkNetworkHandler$Frequency", remap = false)
+public abstract class FrequencyOfMixin {
+
+    @Inject(method = "of", at = @At("RETURN"), cancellable = false, remap = false, require = 0)
+    private static void playerlink$tagFromContext(ItemStack stack,
+                                                  CallbackInfoReturnable<RedstoneLinkNetworkHandler.Frequency> cir) {
+        UUID owner = ControllerOwnerContext.get();
+        if (owner == null) return;
+        Object result = cir.getReturnValue();
+        if (result instanceof IFrequencyOwner fo) {
+            fo.playerlink$setOwner(owner);
+        }
+    }
+}

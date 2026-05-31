@@ -2,6 +2,7 @@ package com.playerlink.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.playerlink.PlayerLinkMod;
+import com.playerlink.network.ClearAllControllerOwnersPacket;
 import com.playerlink.network.RequestControllerWhitelistPacket;
 import com.playerlink.util.ControllerOwners;
 import com.simibubi.create.content.redstone.link.controller.LinkedControllerItem;
@@ -59,7 +60,7 @@ public final class LinkedControllerScreenEvents {
         // Place the face row just below the 2 rows of frequency slots and
         // just above (or overlapping) the textbox/save strip. 58 is a tuned
         // fixed offset; if your imageH differs, send me the log line above.
-        int y      = topPos + 58;
+        int y      = topPos + 80;
 
         int[] r = new int[ControllerOwners.SLOT_COUNT + 1];
         for (int i = 0; i < ControllerOwners.SLOT_COUNT; i++) {
@@ -134,15 +135,56 @@ public final class LinkedControllerScreenEvents {
         int y = layout[ControllerOwners.SLOT_COUNT];
         double mx = event.getMouseX();
         double my = event.getMouseY();
-        if (my < y || my >= y + FACE_SIZE) return;
-        for (int i = 0; i < ControllerOwners.SLOT_COUNT; i++) {
-            int x = layout[i];
-            if (mx >= x && mx < x + FACE_SIZE) {
-                PacketDistributor.sendToServer(new RequestControllerWhitelistPacket(i));
-                event.setCanceled(true);
-                return;
+
+        // 1. Face slot click → open player picker.
+        if (my >= y && my < y + FACE_SIZE) {
+            for (int i = 0; i < ControllerOwners.SLOT_COUNT; i++) {
+                int x = layout[i];
+                if (mx >= x && mx < x + FACE_SIZE) {
+                    PacketDistributor.sendToServer(new RequestControllerWhitelistPacket(i));
+                    event.setCanceled(true);
+                    return;
+                }
             }
         }
+
+        // 2. Trash button click → server clears ALL face owners too.
+        //    We don't cancel — Create still gets the click and clears its
+        //    own slots. We just piggy-back so owners are cleared in sync.
+        if (isTrashButtonClick(lcs, mx, my)) {
+            PacketDistributor.sendToServer(ClearAllControllerOwnersPacket.INSTANCE);
+        }
+    }
+
+    /**
+     * Heuristic: the trash button is the LEFT icon-button in the textbox
+     * strip — i.e. the second-to-last widget by x position in the bottom
+     * strip. Rather than couple to Create's widget classes (fragile), we
+     * scan for any small icon-sized AbstractWidget below the face row,
+     * positioned on the right half of the strip, that the mouse is over.
+     *
+     * The check button (checkmark) sits to the right of the trash button,
+     * so trash = the one with the SMALLER x of the two right-side widgets.
+     */
+    private static boolean isTrashButtonClick(LinkedControllerScreen screen, double mx, double my) {
+        int topPos = screen.getGuiTop();
+        int leftPos = screen.getGuiLeft();
+        int imageW = screen.getXSize();
+
+        // Bottom strip is roughly below the face row. Constrain the search
+        // to that y band so we don't false-positive on freq slot clicks.
+        int faceY = topPos + 80;
+        double yBandTop = faceY + FACE_SIZE - 2;
+        double yBandBot = faceY + FACE_SIZE + 40;
+        if (my < yBandTop || my > yBandBot) return false;
+
+        // Trash sits in the right-third of the panel width, before the check.
+        // From the reference screenshot: trash ≈ leftPos + imageW - 42,
+        // check ≈ leftPos + imageW - 22. Each icon ~16x16.
+        int trashX = leftPos + imageW - 42;
+        int trashY = faceY + FACE_SIZE + 6;
+        return mx >= trashX && mx < trashX + 18
+            && my >= trashY && my < trashY + 18;
     }
 
     private static ItemStack findHeldController(Minecraft mc) {

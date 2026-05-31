@@ -39,6 +39,11 @@ public class PlayerLinkNetwork {
                 SetControllerSlotOwnerPacket.STREAM_CODEC,
                 ServerPacketHandlers::handleSetControllerSlotOwner
         );
+        registrar.playToServer(
+                ClearAllControllerOwnersPacket.TYPE,
+                ClearAllControllerOwnersPacket.STREAM_CODEC,
+                ServerPacketHandlers::handleClearAllControllerOwners
+        );
 
         if (FMLEnvironment.dist.isClient()) {
             try {

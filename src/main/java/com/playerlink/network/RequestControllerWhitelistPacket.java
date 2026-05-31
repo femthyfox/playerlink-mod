@@ -7,13 +7,6 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
-/**
- * C-&gt;S. Sent when the player clicks a face slot inside the Linked
- * Controller GUI. The server replies with a
- * {@link ControllerWhitelistResponsePacket} containing the same slot
- * index plus the current owner of that slot (read from the player's
- * held Linked Controller).
- */
 public record RequestControllerWhitelistPacket(int slotIndex) implements CustomPacketPayload {
 
     public static final Type<RequestControllerWhitelistPacket> TYPE =
@@ -26,7 +19,5 @@ public record RequestControllerWhitelistPacket(int slotIndex) implements CustomP
             );
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
-        return TYPE;
-    }
+    public Type<? extends CustomPacketPayload> type() { return TYPE; }
 }

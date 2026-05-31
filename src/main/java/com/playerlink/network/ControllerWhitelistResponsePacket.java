@@ -11,12 +11,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * S-&gt;C. Reply to {@link RequestControllerWhitelistPacket}. Carries the
- * slot index that was clicked, the current owner of that slot (if any),
- * and the server's whitelist (name + UUID pairs) so the client can show
- * the player-picker.
- */
 public record ControllerWhitelistResponsePacket(int slotIndex,
                                                 Optional<UUID> currentOwner,
                                                 List<WhitelistResponsePacket.Entry> entries)
@@ -37,7 +31,5 @@ public record ControllerWhitelistResponsePacket(int slotIndex,
             );
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
-        return TYPE;
-    }
+    public Type<? extends CustomPacketPayload> type() { return TYPE; }
 }

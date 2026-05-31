@@ -10,11 +10,6 @@ import net.minecraft.resources.ResourceLocation;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * C-&gt;S. Sent when the player confirms an owner inside the controller
- * variant of the player-picker. Server mutates the held Linked
- * Controller's CUSTOM_DATA component for the given slot.
- */
 public record SetControllerSlotOwnerPacket(int slotIndex,
                                            Optional<UUID> newOwner) implements CustomPacketPayload {
 
@@ -29,7 +24,5 @@ public record SetControllerSlotOwnerPacket(int slotIndex,
             );
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
-        return TYPE;
-    }
+    public Type<? extends CustomPacketPayload> type() { return TYPE; }
 }

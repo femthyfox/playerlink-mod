@@ -25,9 +25,11 @@ public abstract class LinkBehaviourMixin {
         SmartBlockEntity be = selfBeh.blockEntity;
         UUID owner = PlayerLinkApi.readBlockOwner(be);
 
-        RedstoneLinkNetworkHandler.Frequency origFirst  = originalKey.getFirst();
+        RedstoneLinkNetworkHandler.Frequency origFirst = originalKey.getFirst();
         RedstoneLinkNetworkHandler.Frequency origSecond = originalKey.getSecond();
 
+        // Build fresh Frequency copies tagged with owner. Never mutate the originals,
+        // since Create stores them as HashMap keys and mutating those would corrupt the map.
         RedstoneLinkNetworkHandler.Frequency newFirst  = RedstoneLinkNetworkHandler.Frequency.of(origFirst.getStack());
         RedstoneLinkNetworkHandler.Frequency newSecond = RedstoneLinkNetworkHandler.Frequency.of(origSecond.getStack());
         PlayerLinkApi.stampOwner(newFirst,  owner);

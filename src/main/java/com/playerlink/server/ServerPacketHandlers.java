@@ -41,32 +41,15 @@ public final class ServerPacketHandlers {
             MinecraftServer server = sp.getServer();
             if (server == null) return;
 
-            PlayerLinkMod.LOGGER.info("[PlayerLink] Got request from {} for link@{}",
-                    sp.getName().getString(), pkt.blockPos());
-
             BlockEntity be = sp.level().getBlockEntity(pkt.blockPos());
-            if (!(be instanceof RedstoneLinkBlockEntity)) {
-                PlayerLinkMod.LOGGER.warn("[PlayerLink] {} requested non-link block at {}",
-                        sp.getName().getString(), pkt.blockPos());
-                return;
-            }
-            double distSqr = sp.distanceToSqr(pkt.blockPos().getCenter());
-            if (distSqr > MAX_REACH_SQR) {
-                PlayerLinkMod.LOGGER.warn("[PlayerLink] {} too far from link@{} (distSqr={})",
-                        sp.getName().getString(), pkt.blockPos(), distSqr);
-                return;
-            }
+            if (!(be instanceof RedstoneLinkBlockEntity)) return;
+            if (sp.distanceToSqr(pkt.blockPos().getCenter()) > MAX_REACH_SQR) return;
 
             UUID currentOwner = PlayerLinkApi.readBlockOwner(be);
             List<WhitelistResponsePacket.Entry> entries = collectWhitelist(server);
 
-            PlayerLinkMod.LOGGER.info("[PlayerLink] Sending {} entries to {}", entries.size(), sp.getName().getString());
-
             PacketDistributor.sendToPlayer(sp, new WhitelistResponsePacket(
-                    pkt.blockPos(),
-                    Optional.ofNullable(currentOwner),
-                    entries
-            ));
+                    pkt.blockPos(), Optional.ofNullable(currentOwner), entries));
         });
     }
 
@@ -88,9 +71,6 @@ public final class ServerPacketHandlers {
             } else {
                 PlayerLinkApi.writeBlockOwner(link, null);
             }
-
-            PlayerLinkMod.LOGGER.info("[PlayerLink] {} set owner of link@{} to {}",
-                    sp.getName().getString(), pkt.blockPos(), newOwner.orElse(null));
         });
     }
 
@@ -103,19 +83,13 @@ public final class ServerPacketHandlers {
             if (slot < 0 || slot >= PlayerLinkApi.slotCount()) return;
 
             ItemStack controller = findController(sp);
-            if (controller.isEmpty()) {
-                PlayerLinkMod.LOGGER.warn("[PlayerLink] {} requested controller whitelist but is not holding one", sp.getName().getString());
-                return;
-            }
+            if (controller.isEmpty()) return;
 
             UUID currentOwner = PlayerLinkApi.readSlotOwner(controller, slot);
             List<WhitelistResponsePacket.Entry> entries = collectWhitelist(server);
 
             PacketDistributor.sendToPlayer(sp, new ControllerWhitelistResponsePacket(
-                    slot,
-                    Optional.ofNullable(currentOwner),
-                    entries
-            ));
+                    slot, Optional.ofNullable(currentOwner), entries));
         });
     }
 
@@ -137,16 +111,10 @@ public final class ServerPacketHandlers {
             } else {
                 PlayerLinkApi.writeSlotOwner(controller, slot, null);
             }
-
-            PlayerLinkMod.LOGGER.info(
-                "[PlayerLink] {} set controller slot {} owner to {}",
-                sp.getName().getString(), slot, newOwner.orElse(null));
             // NOTE: do NOT try to reopen the controller GUI server-side.
-            // The container menu was never closed (PlayerSelectScreen is a
-            // plain Screen, not an AbstractContainerScreen), and the client
-            // restores the original LinkedControllerScreen via setScreen()
-            // in PlayerSelectScreen#onClose(). Any server-side item.use()
-            // call here would only toggle the controller's active state.
+            // PlayerSelectScreen is a plain Screen (not AbstractContainerScreen),
+            // so the LinkedControllerMenu was never closed. Client restores
+            // it via setScreen(returnScreen) in PlayerSelectScreen#onClose().
         });
     }
 

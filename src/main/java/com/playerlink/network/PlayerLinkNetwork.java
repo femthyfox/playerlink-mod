@@ -19,53 +19,30 @@ public class PlayerLinkNetwork {
 
         final PayloadRegistrar registrar = event.registrar(PROTOCOL_VERSION);
 
-        registrar.playToServer(
-                RequestWhitelistPacket.TYPE,
-                RequestWhitelistPacket.STREAM_CODEC,
-                ServerPacketHandlers::handleRequestWhitelist
-        );
-        registrar.playToServer(
-                SetOwnerPacket.TYPE,
-                SetOwnerPacket.STREAM_CODEC,
-                ServerPacketHandlers::handleSetOwner
-        );
-        registrar.playToServer(
-                RequestControllerWhitelistPacket.TYPE,
-                RequestControllerWhitelistPacket.STREAM_CODEC,
-                ServerPacketHandlers::handleRequestControllerWhitelist
-        );
-        registrar.playToServer(
-                SetControllerSlotOwnerPacket.TYPE,
-                SetControllerSlotOwnerPacket.STREAM_CODEC,
-                ServerPacketHandlers::handleSetControllerSlotOwner
-        );
-        registrar.playToServer(
-                ClearAllControllerOwnersPacket.TYPE,
-                ClearAllControllerOwnersPacket.STREAM_CODEC,
-                ServerPacketHandlers::handleClearAllControllerOwners
-        );
+        registrar.playToServer(RequestWhitelistPacket.TYPE, RequestWhitelistPacket.STREAM_CODEC,
+                ServerPacketHandlers::handleRequestWhitelist);
+        registrar.playToServer(SetOwnerPacket.TYPE, SetOwnerPacket.STREAM_CODEC,
+                ServerPacketHandlers::handleSetOwner);
+        registrar.playToServer(RequestControllerWhitelistPacket.TYPE, RequestControllerWhitelistPacket.STREAM_CODEC,
+                ServerPacketHandlers::handleRequestControllerWhitelist);
+        registrar.playToServer(SetControllerSlotOwnerPacket.TYPE, SetControllerSlotOwnerPacket.STREAM_CODEC,
+                ServerPacketHandlers::handleSetControllerSlotOwner);
+        registrar.playToServer(ClearAllControllerOwnersPacket.TYPE, ClearAllControllerOwnersPacket.STREAM_CODEC,
+                ServerPacketHandlers::handleClearAllControllerOwners);
 
         if (FMLEnvironment.dist.isClient()) {
             try {
                 Class.forName("com.playerlink.network.ClientNetwork")
                         .getMethod("registerClient", PayloadRegistrar.class)
                         .invoke(null, registrar);
-                PlayerLinkMod.LOGGER.info("[PlayerLink] Registered playToClient handlers (CLIENT)");
             } catch (Throwable t) {
                 PlayerLinkMod.LOGGER.error("[PlayerLink] Failed to register client handler", t);
             }
         } else {
-            // Server-side stubs so the packet types are known on dedicated servers.
-            registrar.playToClient(
-                    WhitelistResponsePacket.TYPE,
-                    WhitelistResponsePacket.STREAM_CODEC,
-                    (pkt, ctx) -> {}
-            );
-            registrar.playToClient(
-                    ControllerWhitelistResponsePacket.TYPE,
-                    ControllerWhitelistResponsePacket.STREAM_CODEC,
-                    (pkt, ctx) -> {}
-            );
+            registrar.playToClient(WhitelistResponsePacket.TYPE, WhitelistResponsePacket.STREAM_CODEC,
+                    (pkt, ctx) -> {});
+            registrar.playToClient(ControllerWhitelistResponsePacket.TYPE, ControllerWhitelistResponsePacket.STREAM_CODEC,
+                    (pkt, ctx) -> {});
         }
 
         PlayerLinkMod.LOGGER.info("[PlayerLink] <<< register() FINISHED");

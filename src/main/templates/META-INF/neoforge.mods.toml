@@ -5,9 +5,9 @@ issueTrackerURL = "https://example.com/issues"
 
 [[mods]]
 modId = "${mod_id}"
-version = "${mod_version}"
-displayName = "${mod_name}"
-authors = "${mod_authors}"
+version = "1.0.7"
+displayName = "Player links [NeoForge 1.21.1]"
+authors = "acosmicnova"
 description = '''${mod_description}'''
 
 [[mixins]]

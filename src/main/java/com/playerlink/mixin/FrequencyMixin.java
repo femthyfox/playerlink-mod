@@ -50,7 +50,7 @@ public abstract class FrequencyMixin implements IFrequencyOwner {
 
     @Inject(method = "hashCode", at = @At("RETURN"), cancellable = true, remap = false)
     private void playerlink$hashCode(CallbackInfoReturnable<Integer> cir) {
-        int original = cir.getReturnValueI();
+        int original = cir.getReturnValue();
         int ownerHash = (playerlink$owner == null) ? 0 : playerlink$owner.hashCode();
         cir.setReturnValue(original * 31 + ownerHash);
     }

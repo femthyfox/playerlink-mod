@@ -52,6 +52,8 @@ public final class SkinCache {
         if (inFlight.compareAndSet(false, true)) {
             final String resolvedName = (name == null || name.isEmpty()) ? "Player" : name;
 
+            // Step 1: fetch the full profile (with texture properties) from Mojang's session servers.
+            // Without this the GameProfile has no textures and the skin manager can't load anything.
             CompletableFuture.supplyAsync(() -> {
                 try {
                     MinecraftSessionService session = mc.getMinecraftSessionService();

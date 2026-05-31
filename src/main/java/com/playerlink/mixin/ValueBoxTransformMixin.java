@@ -14,11 +14,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/**
- * Overrides {@link ValueBoxTransform#testHit} so a click on the visible block
- * surface registers on the nearer of the two frequency slots, regardless of
- * the slot's render-depth. Only active for {@link RedstoneLinkFrequencySlot}.
- */
 @Mixin(value = ValueBoxTransform.class, remap = false)
 public abstract class ValueBoxTransformMixin {
 
@@ -44,7 +39,7 @@ public abstract class ValueBoxTransformMixin {
             boolean hit = distMine < tolerance && distMine <= distOther;
             cir.setReturnValue(hit);
         } catch (Throwable t) {
-            // fall through to Create's default 3D check
+            // fall through to Create's default
         }
     }
 }

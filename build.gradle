@@ -4,17 +4,22 @@ plugins {
     id 'net.neoforged.moddev' version '1.0.21'
 }
 
-version = mod_version
+version = '1.0.6'
 group = mod_group_id
 
 base {
-    archivesName = mod_id
+    archivesName = 'PlayerLink-NeoForge-1.21.1'
 }
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 repositories {
     mavenLocal()
+maven {
+    // create mod link
+        name = "Create Mod Maven"
+        url = "https://maven.createmod.net/"
+    }
     // Create
     maven {
         name = 'tterrag maven'
@@ -35,8 +40,17 @@ repositories {
         url = 'https://modmaven.dev/'
     }
     mavenCentral()
-}
+ 
+maven {
+        name = "CreateMod Maven"
+        url = "https://maven.createmod.net/"
+    }
 
+maven { 
+        url = "https://maven.ithundxr.dev/snapshots" 
+    }
+}
+    
 neoForge {
     version = neo_version
 
@@ -75,17 +89,19 @@ neoForge {
 }
 
 dependencies {
-    // Create mod (compile against slim, run with full)
-    compileOnly "com.simibubi.create:create-${minecraft_version}:${create_version}:slim"
-    runtimeOnly "com.simibubi.create:create-${minecraft_version}:${create_version}"
+    // Create Mod Core
+    implementation("com.simibubi.create:create-1.21.1:6.0.10-223")
 
-    // Flywheel (Create dependency)
-    compileOnly "dev.engine_room.flywheel:flywheel-neoforge-${minecraft_version}:${flywheel_version}"
-    runtimeOnly "dev.engine_room.flywheel:flywheel-neoforge-${minecraft_version}:${flywheel_version}"
+    // ==========================================
+    // GUARANTEED LOCAL FIX FOR PONDER
+    // ==========================================
+    implementation files("libs/Ponder-NeoForge-1.21.1-1.0.46.jar")
 
-    // Registrate (Create dependency)
-    compileOnly "com.tterrag.registrate:Registrate:${registrate_version}"
-    runtimeOnly "com.tterrag.registrate:Registrate:${registrate_version}"
+    // Flywheel Mod Backend (Already fixed locally)
+    compileOnly files("libs/flywheel-neoforge-api-1.21.1-1.0.6.jar")
+
+    // Registrate Component
+    implementation("com.tterrag.registrate:Registrate:${registrate_version}")
 }
 
 // Token-replace mods.toml at build time

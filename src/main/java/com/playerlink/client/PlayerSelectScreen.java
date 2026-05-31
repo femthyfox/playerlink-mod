@@ -23,15 +23,14 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Player-owner selection screen styled to evoke a vanilla-Create look:
- *   • Stone background panel
- *   • Spruce-wood title bar and tile borders
- *   • Redstone-red accents for the selected/current owner
- *   • Brass buttons with dark text for high contrast
+ * Player-owner selection screen. Used in two modes:
+ *   • block-link mode  — sends SetOwnerPacket on assign
+ *   • controller mode  — sends SetControllerSlotOwnerPacket on assign,
+ *                        and returns to the Linked Controller screen on close.
  */
 public class PlayerSelectScreen extends Screen {
 
-    // ─── PALETTE (stone + spruce + redstone + brass) ───────────────────────
+    // ─── PALETTE ───────────────────────────────────────────────────────────
     private static final int COL_BG_DIM        = 0xB0000000;
 
     // Stone panel — between stone and dark-gray concrete
@@ -70,7 +69,7 @@ public class PlayerSelectScreen extends Screen {
     private static final int PANEL_MARGIN = 24;
 
     private final BlockPos blockPos;
-    private final int controllerSlot;          // -1 when in block-link mode
+    private final int controllerSlot;            // -1 when in block-link mode
     @Nullable private final Screen returnScreen; // restored on close (controller mode)
     @Nullable private final UUID currentOwner;
     private final List<WhitelistResponsePacket.Entry> allEntries;
@@ -86,14 +85,14 @@ public class PlayerSelectScreen extends Screen {
     private int panelX, panelY, panelW, panelH;
     private int gridX, gridY, gridW, gridH;
 
-    /** Factory: open in block-link mode (sends SetOwnerPacket on assign). */
+    /** Factory: open in block-link mode. */
     public static PlayerSelectScreen forBlock(BlockPos pos,
                                               @Nullable UUID currentOwner,
                                               List<WhitelistResponsePacket.Entry> entries) {
         return new PlayerSelectScreen(pos, -1, null, currentOwner, entries);
     }
 
-    /** Factory: open in controller-slot mode (sends SetControllerSlotOwnerPacket on assign). */
+    /** Factory: open in controller-slot mode. */
     public static PlayerSelectScreen forControllerSlot(int slotIndex,
                                                        @Nullable UUID currentOwner,
                                                        List<WhitelistResponsePacket.Entry> entries,
@@ -101,7 +100,7 @@ public class PlayerSelectScreen extends Screen {
         return new PlayerSelectScreen(BlockPos.ZERO, slotIndex, returnScreen, currentOwner, entries);
     }
 
-    /** Back-compat single-arg constructor — preserves the old "(pos, owner, entries)" signature. */
+    /** Back-compat single-arg constructor. */
     public PlayerSelectScreen(BlockPos pos, @Nullable UUID currentOwner, List<WhitelistResponsePacket.Entry> entries) {
         this(pos, -1, null, currentOwner, entries);
     }
@@ -140,7 +139,6 @@ public class PlayerSelectScreen extends Screen {
         int innerRight = panelX + panelW - 12;
         int innerWidth = innerRight - innerLeft;
 
-        // Search box sits below title bar + owner-strip row
         int searchY = panelY + 50;
         searchBox = new EditBox(font, innerLeft + 1, searchY, innerWidth - 2, 16,
                 Component.translatable("playerlink.gui.select_owner.search"));
@@ -277,27 +275,25 @@ public class PlayerSelectScreen extends Screen {
         // ── Drop shadow under panel
         g.fill(panelX + 3, panelY + 4, panelX + panelW + 3, panelY + panelH + 4, 0x90000000);
 
-        // ── Stone panel (light gradient)
+        // ── Stone panel
         drawStonePanel(g, panelX, panelY, panelW, panelH);
 
-        // ── Spruce title bar (lighter tone)
+        // ── Spruce title bar
         int titleBarH = 20;
         int tbx = panelX + 4, tby = panelY + 4;
         int tbw = panelW - 8;
         g.fillGradient(tbx, tby, tbx + tbw, tby + titleBarH, COL_SPRUCE_LIGHT, COL_SPRUCE_HI);
-        // Plank grain lines
         for (int i = 1; i < 4; i++) {
             int gy = tby + (titleBarH * i / 4);
             g.fill(tbx, gy, tbx + tbw, gy + 1, COL_SPRUCE);
         }
-        // Title bar border
         g.fill(tbx, tby, tbx + tbw, tby + 1, COL_SPRUCE_LIGHT);
         g.fill(tbx, tby + titleBarH - 1, tbx + tbw, tby + titleBarH, COL_SPRUCE_DARK);
 
-        // Title text (cream, with shadow) — left aligned
+        // Title text
         g.drawString(font, title, panelX + 12, panelY + 10, COL_TEXT_LIGHT, true);
 
-        // ── Owner-info strip BELOW the title bar (no overlap with title)
+        // ── Owner-info strip
         int stripY = tby + titleBarH + 2;
         int stripH = 14;
         drawInsetBox(g, tbx, stripY, tbw, stripH, 0xFF4A4A4A, COL_STONE_TOP);
@@ -315,7 +311,7 @@ public class PlayerSelectScreen extends Screen {
         int sw = searchBox.getWidth() + 4, sh = 20;
         drawInsetBox(g, sx, sy, sw, sh, 0xFF1F1F1F, 0xFFB0B0B0);
 
-        // ── Grid background (recessed darker stone with decorative pattern)
+        // ── Grid background
         drawInsetBox(g, gridX - 4, gridY - 4, gridW + 8, gridH + 8, 0xFF4A4A4A, COL_STONE_TOP);
         drawGridDecor(g, gridX - 4, gridY - 4, gridW + 8, gridH + 8);
 
@@ -329,7 +325,7 @@ public class PlayerSelectScreen extends Screen {
             drawTileGrid(g, mouseX, mouseY);
         }
 
-        // ── Hint text between grid and buttons
+        // ── Hint text
         Component hint = Component.literal("Click a player to select");
         int hintX = panelX + (panelW - font.width(hint)) / 2;
         int hintY = panelY + panelH - 40;
@@ -365,7 +361,7 @@ public class PlayerSelectScreen extends Screen {
             // Subtle plank grain
             g.fill(tx + 2, ty + TILE_H / 2, tx + TILE_W - 2, ty + TILE_H / 2 + 1, COL_SPRUCE_DARK);
 
-            // Border: redstone-red for selected/current, dark wood otherwise
+            // Border
             int border = isSelected ? COL_REDSTONE_HI
                        : isCurrent  ? COL_REDSTONE
                        : COL_SPRUCE_DARK;
@@ -377,10 +373,9 @@ public class PlayerSelectScreen extends Screen {
                 g.fill(tx + TILE_W - 1 - t, ty + t, tx + TILE_W - t, ty + TILE_H - t, border);
             }
 
-            // Face well (dark slot behind face)
+            // Face well
             int faceX = tx + (TILE_W - FACE_SIZE) / 2;
             int faceY = ty + 6;
-            // 2-px bevel well — lighter than tile border so face pops
             g.fill(faceX - 2, faceY - 2, faceX + FACE_SIZE + 2, faceY + FACE_SIZE + 2, COL_SPRUCE_DARK);
             g.fill(faceX - 1, faceY - 1, faceX + FACE_SIZE + 1, faceY + FACE_SIZE + 1, COL_SPRUCE_FACE_WELL);
 
@@ -460,19 +455,15 @@ public class PlayerSelectScreen extends Screen {
     }
 
     /**
-     * Decorative cobble-pattern overlay drawn over the recessed grid backplate
-     * to give it visual texture. Uses tiny offset rectangles for an etched
-     * stone-bricks look + redstone-tinted "rivets" in the corners.
+     * Decorative brick pattern + corner rivets drawn over the recessed grid backplate.
      */
     private void drawGridDecor(GuiGraphics g, int x, int y, int w, int h) {
-        // Tile a brick pattern inside the inset
         int brickW = 16, brickH = 6;
         int xStart = x + 2;
         int yStart = y + 2;
         int xEnd = x + w - 2;
         int yEnd = y + h - 2;
 
-        // Light bricks etched on the dark inset background
         int rowIdx = 0;
         for (int by = yStart; by < yEnd; by += brickH + 1) {
             int offset = (rowIdx++ % 2 == 0) ? 0 : brickW / 2;
@@ -482,14 +473,12 @@ public class PlayerSelectScreen extends Screen {
                 int y1 = by;
                 int y2 = Math.min(by + brickH, yEnd);
                 if (x2 - x1 <= 1 || y2 - y1 <= 1) continue;
-                // Brick highlight (subtle, lighter than bg)
                 g.fill(x1, y1, x2, y1 + 1, 0x22FFFFFF);
-                // Brick shadow (subtle, darker than bg)
                 g.fill(x1, y2 - 1, x2, y2, 0x22000000);
             }
         }
 
-        // Corner "rivets" — brass dots with redstone highlight
+        // Corner rivets
         drawRivet(g, x + 3, y + 3);
         drawRivet(g, x + w - 7, y + 3);
         drawRivet(g, x + 3, y + h - 7);
@@ -497,17 +486,14 @@ public class PlayerSelectScreen extends Screen {
     }
 
     private void drawRivet(GuiGraphics g, int x, int y) {
-        // Outer dark ring
         g.fill(x, y, x + 4, y + 4, COL_STONE_SHADOW);
-        // Brass body
         g.fill(x, y, x + 3, y + 3, COL_BRASS_BORDER);
         g.fill(x + 1, y + 1, x + 3, y + 3, COL_BRASS_BOT);
-        // Top-left specular pixel
         g.fill(x + 1, y + 1, x + 2, y + 2, COL_BRASS_HI);
     }
 
     // ──────────────────────────────────────────────────────────────────────
-    // Custom brass-painted button (dark text, brass body, redstone hover tint)
+    // Brass-painted button
     // ──────────────────────────────────────────────────────────────────────
     private class BrassButton extends Button {
         BrassButton(int x, int y, int w, int h, Component msg, OnPress onPress) {
@@ -526,20 +512,15 @@ public class PlayerSelectScreen extends Screen {
             // Outer shadow
             g.fill(x, y + h, x + w, y + h + 1, COL_STONE_SHADOW);
 
-            // Border (slightly redstone-tinted on hover for affordance)
             int border = hovered ? COL_REDSTONE : COL_BRASS_BORDER;
             g.fill(x, y, x + w, y + 1, border);
             g.fill(x, y + h - 1, x + w, y + h, border);
             g.fill(x, y, x + 1, y + h, border);
             g.fill(x + w - 1, y, x + w, y + h, border);
 
-            // Brass gradient body
             g.fillGradient(x + 1, y + 1, x + w - 1, y + h - 1, top, bot);
-
-            // Top highlight line for that polished metal look
             g.fill(x + 1, y + 1, x + w - 1, y + 2, 0x70FFFFFF);
 
-            // Label — dark text for max contrast on brass
             int textColor = this.active ? COL_TEXT_DARK : 0x80000000;
             int labelX = x + (w - font.width(getMessage())) / 2;
             int labelY = y + (h - font.lineHeight) / 2 + 1;

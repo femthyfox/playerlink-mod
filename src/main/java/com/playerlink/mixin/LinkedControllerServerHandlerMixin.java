@@ -28,13 +28,14 @@ import java.util.UUID;
  * stamp every produced Frequency with it.
  *
  * <p>The reflective lookup of Create's per-slot frequency-items method is
- * <b>cached</b> the first time it succeeds — we never reflect twice.
+ * cached the first time it succeeds — we never reflect twice on the
+ * hot path of every button press.
  */
 @Mixin(value = com.simibubi.create.content.redstone.link.controller.LinkedControllerServerHandler.class,
        remap = false)
 public abstract class LinkedControllerServerHandlerMixin {
 
-    /** Candidate method names on {@link LinkedControllerItem} to find the per-slot frequency items. */
+    /** Candidate method names on {@link LinkedControllerItem} for per-slot freq items. */
     private static final String[] SLOT_ITEMS_METHODS = {
             "getFrequencyItems", "getFrequencyItemsFor", "getNetworkKey"
     };
@@ -56,12 +57,20 @@ public abstract class LinkedControllerServerHandlerMixin {
             if (sp == null) return;
 
             ItemStack ctrl = playerlink$findController(sp);
-            if (ctrl.isEmpty()) return;
+            if (ctrl.isEmpty()) {
+                PlayerLinkMod.LOGGER.info("[PlayerLink] receivePressed: player {} has no controller in hand",
+                        sp.getName().getString());
+                return;
+            }
 
             int slot = playerlink$findSlotByItems(ctrl, items);
-            if (slot < 0) return;
+            if (slot < 0) {
+                PlayerLinkMod.LOGGER.info("[PlayerLink] receivePressed: could NOT match items to a slot");
+                return;
+            }
 
             UUID owner = PlayerLinkApi.readSlotOwner(ctrl, slot);
+            PlayerLinkMod.LOGGER.info("[PlayerLink] receivePressed: matched slot={}, owner={}", slot, owner);
             if (owner != null) PlayerLinkApi.beginTransmit(owner);
         } catch (Throwable t) {
             PlayerLinkMod.LOGGER.warn("[PlayerLink] receivePressed HEAD threw", t);
@@ -108,7 +117,8 @@ public abstract class LinkedControllerServerHandlerMixin {
     /**
      * Resolves Create's per-slot frequency-items method exactly once and
      * caches the {@link Method} for subsequent calls. On first failure,
-     * logs the available static methods so the right name can be added.
+     * logs the available static methods so the right name can be added
+     * to {@link #SLOT_ITEMS_METHODS}.
      */
     private static Method playerlink$resolveSlotItemsMethod() {
         if (LOOKUP_RESOLVED) return CACHED_SLOT_ITEMS_METHOD;

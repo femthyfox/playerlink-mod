@@ -48,11 +48,6 @@ public final class ClientEvents {
         event.register(OPEN_OWNER_GUI);
     }
 
-    /**
-     * Each tick: figure out whether the player's crosshair is on a face slot
-     * of a redstone link, store that on {@link LinkFaceRenderer#HOVERED_FACE_SLOT_POS}
-     * so the renderer can show a highlight, and let the K-key open the GUI.
-     */
     @SubscribeEvent
     public static void onClientTick(final ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
@@ -83,11 +78,6 @@ public final class ClientEvents {
         }
     }
 
-    /**
-     * Draw the "Player Frequency / click to open" hint on the HUD when the
-     * player is hovering over the face slot. Styled to mirror Create's
-     * value-box hover labels.
-     */
     @SubscribeEvent
     public static void onRenderHud(final RenderGuiEvent.Post event) {
         BlockPos hovered = LinkFaceRenderer.HOVERED_FACE_SLOT_POS;
@@ -114,13 +104,6 @@ public final class ClientEvents {
         g.drawString(font, sub,   sw / 2 - font.width(sub)   / 2, subY,   0xFFAAAAAA, true);
     }
 
-    /**
-     * Open the GUI when the player right-clicks the face slot. Held item
-     * doesn't matter — we cancel the event so it doesn't fall through to
-     * Create's frequency-setting logic.
-     *
-     * High priority so we run before Create's LinkHandler.
-     */
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onUseBlock(final PlayerInteractEvent.RightClickBlock event) {
         if (!event.getLevel().isClientSide()) return;
@@ -137,6 +120,8 @@ public final class ClientEvents {
 
         PlayerLinkMod.LOGGER.info("[PlayerLink] Face slot clicked at {}, opening GUI", event.getPos());
         PacketDistributor.sendToServer(new RequestWhitelistPacket(event.getPos()));
+        event.setUseBlock(net.neoforged.neoforge.common.util.TriState.FALSE);
+        event.setUseItem(net.neoforged.neoforge.common.util.TriState.FALSE);
         event.setCancellationResult(InteractionResult.SUCCESS);
         event.setCanceled(true);
     }

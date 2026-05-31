@@ -10,14 +10,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/**
- * Hooks Create's per-block link rendering so we can draw the owner's player
- * face inside the GUI face slot on every redstone link.
- *
- * Targets {@code LinkRenderer.renderOnBlockEntity}, which Create's
- * {@code SmartBlockEntityRenderer} calls for every smart block entity each
- * frame. We piggyback at TAIL so Create's value-box items render first.
- */
 @Mixin(targets = "com.simibubi.create.content.redstone.link.LinkRenderer", remap = false)
 public abstract class RedstoneLinkRendererMixin {
 

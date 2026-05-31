@@ -2,6 +2,7 @@ package com.playerlink.server;
 
 import com.playerlink.PlayerLinkMod;
 import com.playerlink.api.IOwnedLink;
+import com.playerlink.network.ClearAllControllerOwnersPacket;
 import com.playerlink.network.ControllerWhitelistResponsePacket;
 import com.playerlink.network.RequestControllerWhitelistPacket;
 import com.playerlink.network.RequestWhitelistPacket;
@@ -111,6 +112,19 @@ public final class ServerPacketHandlers {
             } else {
                 ControllerOwners.set(controller, slot, null);
             }
+        });
+    }
+
+    public static void handleClearAllControllerOwners(final ClearAllControllerOwnersPacket pkt, final IPayloadContext ctx) {
+        ctx.enqueueWork(() -> {
+            if (!(ctx.player() instanceof ServerPlayer sp)) return;
+            ItemStack controller = findController(sp);
+            if (controller.isEmpty()) return;
+            for (int i = 0; i < ControllerOwners.SLOT_COUNT; i++) {
+                ControllerOwners.set(controller, i, null);
+            }
+            PlayerLinkMod.LOGGER.info("[PlayerLink] {} cleared all controller slot owners",
+                    sp.getName().getString());
         });
     }
 

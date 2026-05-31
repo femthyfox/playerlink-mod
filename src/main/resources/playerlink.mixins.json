@@ -6,8 +6,10 @@
   "minVersion": "0.8",
   "mixins": [
     "FrequencyMixin",
+    "FrequencyOfMixin",
     "RedstoneLinkBlockEntityMixin",
     "LinkBehaviourMixin",
+    "LinkedControllerServerHandlerMixin",
     "RedstoneLinkFrequencySlotMixin",
     "ValueBoxTransformMixin"
   ],

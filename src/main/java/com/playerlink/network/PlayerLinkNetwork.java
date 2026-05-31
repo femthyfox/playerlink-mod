@@ -27,13 +27,14 @@ public class PlayerLinkNetwork {
                 ServerPacketHandlers::handleRequestControllerWhitelist);
         registrar.playToServer(SetControllerSlotOwnerPacket.TYPE, SetControllerSlotOwnerPacket.STREAM_CODEC,
                 ServerPacketHandlers::handleSetControllerSlotOwner);
+        registrar.playToServer(ClearAllControllerOwnersPacket.TYPE, ClearAllControllerOwnersPacket.STREAM_CODEC,
+                ServerPacketHandlers::handleClearAllControllerOwners);
 
         if (FMLEnvironment.dist.isClient()) {
             try {
                 Class.forName("com.playerlink.network.ClientNetwork")
                         .getMethod("registerClient", PayloadRegistrar.class)
                         .invoke(null, registrar);
-                PlayerLinkMod.LOGGER.info("[PlayerLink] Registered playToClient handlers (CLIENT)");
             } catch (Throwable t) {
                 PlayerLinkMod.LOGGER.error("[PlayerLink] Failed to register client handler", t);
             }

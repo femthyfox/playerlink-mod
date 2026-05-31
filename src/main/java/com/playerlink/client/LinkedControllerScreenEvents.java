@@ -2,6 +2,7 @@ package com.playerlink.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.playerlink.PlayerLinkMod;
+import com.playerlink.network.ClearAllControllerOwnersPacket;
 import com.playerlink.network.RequestControllerWhitelistPacket;
 import com.playerlink.util.ControllerOwners;
 import com.simibubi.create.content.redstone.link.controller.LinkedControllerItem;
@@ -45,10 +46,7 @@ public final class LinkedControllerScreenEvents {
 
         int totalW = ControllerOwners.SLOT_COUNT * FACE_SIZE + (ControllerOwners.SLOT_COUNT - 1) * FACE_GAP;
         int startX = leftPos + (imageW - totalW) / 2;
-        // Place the face row just below the 2 rows of frequency slots and
-        // just above (or overlapping) the textbox/save strip. 58 is a tuned
-        // fixed offset; if your imageH differs, send me the log line above.
-        int y      = topPos + 58;
+        int y      = topPos + 80;
 
         int[] r = new int[ControllerOwners.SLOT_COUNT + 1];
         for (int i = 0; i < ControllerOwners.SLOT_COUNT; i++) {
@@ -121,15 +119,34 @@ public final class LinkedControllerScreenEvents {
         int y = layout[ControllerOwners.SLOT_COUNT];
         double mx = event.getMouseX();
         double my = event.getMouseY();
-        if (my < y || my >= y + FACE_SIZE) return;
-        for (int i = 0; i < ControllerOwners.SLOT_COUNT; i++) {
-            int x = layout[i];
-            if (mx >= x && mx < x + FACE_SIZE) {
-                PacketDistributor.sendToServer(new RequestControllerWhitelistPacket(i));
-                event.setCanceled(true);
-                return;
+
+        // Face slot click → open player picker.
+        if (my >= y && my < y + FACE_SIZE) {
+            for (int i = 0; i < ControllerOwners.SLOT_COUNT; i++) {
+                int x = layout[i];
+                if (mx >= x && mx < x + FACE_SIZE) {
+                    PacketDistributor.sendToServer(new RequestControllerWhitelistPacket(i));
+                    event.setCanceled(true);
+                    return;
+                }
             }
         }
+
+        // Trash button click → server clears ALL face owners too.
+        if (isTrashButtonClick(lcs, mx, my)) {
+            PacketDistributor.sendToServer(ClearAllControllerOwnersPacket.INSTANCE);
+        }
+    }
+
+    private static boolean isTrashButtonClick(LinkedControllerScreen screen, double mx, double my) {
+        int topPos = screen.getGuiTop();
+        int leftPos = screen.getGuiLeft();
+        int imageW = screen.getXSize();
+        int faceY = topPos + 80;
+        int trashX = leftPos + imageW - 42;
+        int trashY = faceY + FACE_SIZE + 6;
+        return mx >= trashX && mx < trashX + 18
+            && my >= trashY && my < trashY + 18;
     }
 
     private static ItemStack findHeldController(Minecraft mc) {

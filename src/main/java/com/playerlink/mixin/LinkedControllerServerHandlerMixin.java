@@ -1,8 +1,8 @@
 package com.playerlink.mixin;
 
 import com.playerlink.PlayerLinkMod;
-import com.playerlink.util.ControllerOwners;
 import com.playerlink.util.ControllerOwnerContext;
+import com.playerlink.util.ControllerOwners;
 import com.simibubi.create.content.redstone.link.controller.LinkedControllerItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
@@ -17,19 +17,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Mixin into Create's LinkedControllerServerHandler#receivePressed.
- *
- * Real Create 6.0.10 signature (from the previous crash log):
- *   receivePressed(LevelAccessor level, BlockPos pos, UUID uuid,
- *                  List items, boolean pressed)
- *
- * Create does NOT pass the slot index server-side — it only ships the
- * frequency items list. We reconstruct the slot by comparing the items
- * list against each of the player's controller slots via reflection.
- *
- * Wrapped in try/catch so a Create API change can never crash the server.
- */
 @Mixin(value = com.simibubi.create.content.redstone.link.controller.LinkedControllerServerHandler.class, remap = false)
 public abstract class LinkedControllerServerHandlerMixin {
 
@@ -46,15 +33,23 @@ public abstract class LinkedControllerServerHandlerMixin {
             if (sp == null) return;
 
             ItemStack ctrl = playerlink$findController(sp);
-            if (ctrl.isEmpty()) return;
+            if (ctrl.isEmpty()) {
+                PlayerLinkMod.LOGGER.info("[PlayerLink] receivePressed: player {} has no controller in hand",
+                        sp.getName().getString());
+                return;
+            }
 
             int slot = playerlink$findSlotByItems(ctrl, items);
-            if (slot < 0) return;
+            if (slot < 0) {
+                PlayerLinkMod.LOGGER.info("[PlayerLink] receivePressed: could NOT match items to a slot");
+                return;
+            }
 
             UUID owner = ControllerOwners.get(ctrl, slot);
+            PlayerLinkMod.LOGGER.info("[PlayerLink] receivePressed: matched slot={}, owner={}", slot, owner);
             if (owner != null) ControllerOwnerContext.set(owner);
         } catch (Throwable t) {
-            PlayerLinkMod.LOGGER.debug("[PlayerLink] receivePressed HEAD swallowed", t);
+            PlayerLinkMod.LOGGER.warn("[PlayerLink] receivePressed HEAD threw", t);
             ControllerOwnerContext.clear();
         }
     }
@@ -74,11 +69,6 @@ public abstract class LinkedControllerServerHandlerMixin {
         return ItemStack.EMPTY;
     }
 
-    /**
-     * Find which slot's stored frequency items match the items received by
-     * receivePressed. Uses reflection so an unexpected API rename in Create
-     * doesn't crash us — we just silently return -1 and skip isolation.
-     */
     private static int playerlink$findSlotByItems(ItemStack controller, List<ItemStack> items) {
         String[] candidates = { "getFrequencyItems", "getFrequencyItemsFor", "getNetworkKey" };
         for (String methodName : candidates) {
@@ -86,6 +76,7 @@ public abstract class LinkedControllerServerHandlerMixin {
                 java.lang.reflect.Method m =
                         LinkedControllerItem.class.getDeclaredMethod(methodName, ItemStack.class, int.class);
                 m.setAccessible(true);
+                PlayerLinkMod.LOGGER.info("[PlayerLink] slot lookup using API method '{}'", methodName);
                 for (int slot = 0; slot < ControllerOwners.SLOT_COUNT; slot++) {
                     Object result = m.invoke(null, controller, slot);
                     if (result instanceof List<?> list && playerlink$itemsMatch(list, items)) {
@@ -94,13 +85,28 @@ public abstract class LinkedControllerServerHandlerMixin {
                 }
                 return -1;
             } catch (NoSuchMethodException ignored) {
-                // try next candidate
+                // try next
             } catch (Throwable t) {
-                PlayerLinkMod.LOGGER.debug("[PlayerLink] slot lookup failed via {}", methodName, t);
+                PlayerLinkMod.LOGGER.warn("[PlayerLink] slot lookup via {} threw", methodName, t);
                 return -1;
             }
         }
+        PlayerLinkMod.LOGGER.info("[PlayerLink] slot lookup: no candidate API matched. Tried: {}. " +
+                "Static methods on LinkedControllerItem: {}",
+                String.join(", ", candidates),
+                playerlink$listStaticMethods());
         return -1;
+    }
+
+    private static String playerlink$listStaticMethods() {
+        StringBuilder sb = new StringBuilder();
+        for (java.lang.reflect.Method m : LinkedControllerItem.class.getDeclaredMethods()) {
+            if (java.lang.reflect.Modifier.isStatic(m.getModifiers())) {
+                if (sb.length() > 0) sb.append(", ");
+                sb.append(m.getName()).append("(").append(m.getParameterCount()).append(")");
+            }
+        }
+        return sb.toString();
     }
 
     private static boolean playerlink$itemsMatch(List<?> a, List<ItemStack> b) {

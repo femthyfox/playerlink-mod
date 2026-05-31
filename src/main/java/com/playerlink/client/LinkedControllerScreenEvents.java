@@ -3,6 +3,7 @@ package com.playerlink.client;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.playerlink.PlayerLinkMod;
 import com.playerlink.network.ClearAllControllerOwnersPacket;
+import com.playerlink.network.ClearAllControllerOwnersPacket;
 import com.playerlink.network.RequestControllerWhitelistPacket;
 import com.playerlink.util.ControllerOwners;
 import com.simibubi.create.content.redstone.link.controller.LinkedControllerItem;
@@ -97,9 +98,9 @@ public final class LinkedControllerScreenEvents {
             faceX[i] = leftPos + sortedXs.get(i);
         }
 
-        // Place the face row right below the lowest freq slot
-        // (slot is 16px tall, +6 gap = 22).
-        faceY = topPos + maxFreqSlotY + 22;
+        // Place the face row BELOW Create's bottom strip (which contains the
+        // textbox + trash + check buttons). +50 clears the strip with margin.
+        faceY = topPos + maxFreqSlotY + 50;
         layoutValid = true;
 
         if (!layoutLogged) {
@@ -178,13 +179,26 @@ public final class LinkedControllerScreenEvents {
             }
         }
 
-        // Trash button click — sync clearing on our side too. (We no longer
-        // hard-code coordinates — instead we just send the clear packet on
-        // ANY click that's within Create's bottom strip but NOT on a face.
-        // If user just clicks the bottom strip area, we clear; this is a
-        // pragmatic compromise until we can detect Create's exact trash
-        // button widget. Adjust later if it causes false-clears.)
-        // For now, leave trash auto-clear disabled to avoid surprises.
+        // Trash button click — server clears ALL face owners too.
+        // Don't cancel — Create still handles the click for its own slots.
+        if (isTrashButtonClick(lcs, mx, my)) {
+            PacketDistributor.sendToServer(ClearAllControllerOwnersPacket.INSTANCE);
+        }
+    }
+
+    /**
+     * Trash button position: fixed relative to Create's bottom strip,
+     * roughly 44px from the right edge, 4px below the main panel bottom.
+     */
+    private static boolean isTrashButtonClick(LinkedControllerScreen screen, double mx, double my) {
+        int leftPos = screen.getGuiLeft();
+        int topPos = screen.getGuiTop();
+        int imageW = screen.getXSize();
+        int imageH = screen.getYSize();
+        int trashX = leftPos + imageW - 44;
+        int trashY = topPos + imageH + 4;
+        return mx >= trashX && mx < trashX + 18
+            && my >= trashY && my < trashY + 18;
     }
 
     private static ItemStack findHeldController(Minecraft mc) {

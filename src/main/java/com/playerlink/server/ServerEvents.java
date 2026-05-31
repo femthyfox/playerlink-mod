@@ -2,7 +2,7 @@ package com.playerlink.server;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.playerlink.PlayerLinkMod;
-import com.playerlink.api.IOwnedLink;
+import com.playerlink.api.PlayerLinkApi;
 import com.simibubi.create.content.redstone.link.RedstoneLinkBlockEntity;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -45,7 +45,7 @@ public final class ServerEvents {
                                 src.sendFailure(Component.translatable("playerlink.message.no_link"));
                                 return 0;
                             }
-                            java.util.UUID owner = ((IOwnedLink) be).playerlink$getOwner();
+                            java.util.UUID owner = PlayerLinkApi.readBlockOwner(be);
                             String name = owner == null ? "(none)" : sp.getServer().getProfileCache()
                                     .get(owner).map(p -> p.getName()).orElse(owner.toString());
                             src.sendSuccess(() -> Component.translatable(
@@ -68,7 +68,7 @@ public final class ServerEvents {
                                         src.sendFailure(Component.translatable("playerlink.message.no_link"));
                                         return 0;
                                     }
-                                    ((IOwnedLink) be).playerlink$setOwner(null);
+                                    PlayerLinkApi.writeBlockOwner(be, null);
                                     src.sendSuccess(() -> Component.translatable("playerlink.message.owner_cleared"), false);
                                     return 1;
                                 }))));

@@ -1,7 +1,7 @@
 package com.playerlink.server;
 
 import com.playerlink.PlayerLinkMod;
-import com.playerlink.api.IOwnedLink;
+import com.playerlink.api.PlayerLinkApi;
 import com.playerlink.network.ClearAllControllerOwnersPacket;
 import com.playerlink.network.ControllerWhitelistResponsePacket;
 import com.playerlink.network.RequestControllerWhitelistPacket;
@@ -9,7 +9,6 @@ import com.playerlink.network.RequestWhitelistPacket;
 import com.playerlink.network.SetControllerSlotOwnerPacket;
 import com.playerlink.network.SetOwnerPacket;
 import com.playerlink.network.WhitelistResponsePacket;
-import com.playerlink.util.ControllerOwners;
 import com.mojang.authlib.GameProfile;
 import com.simibubi.create.content.redstone.link.RedstoneLinkBlockEntity;
 import com.simibubi.create.content.redstone.link.controller.LinkedControllerItem;
@@ -58,7 +57,7 @@ public final class ServerPacketHandlers {
                 return;
             }
 
-            UUID currentOwner = ((IOwnedLink) be).playerlink$getOwner();
+            UUID currentOwner = PlayerLinkApi.readBlockOwner(be);
             List<WhitelistResponsePacket.Entry> entries = collectWhitelist(server);
 
             PlayerLinkMod.LOGGER.info("[PlayerLink] Sending {} entries to {}", entries.size(), sp.getName().getString());
@@ -85,9 +84,9 @@ public final class ServerPacketHandlers {
             Optional<UUID> newOwner = pkt.newOwner();
             if (newOwner.isPresent()) {
                 if (!validateOwner(server, newOwner.get())) return;
-                ((IOwnedLink) link).playerlink$setOwner(newOwner.get());
+                PlayerLinkApi.writeBlockOwner(link, newOwner.get());
             } else {
-                ((IOwnedLink) link).playerlink$setOwner(null);
+                PlayerLinkApi.writeBlockOwner(link, null);
             }
 
             PlayerLinkMod.LOGGER.info("[PlayerLink] {} set owner of link@{} to {}",
@@ -101,7 +100,7 @@ public final class ServerPacketHandlers {
             MinecraftServer server = sp.getServer();
             if (server == null) return;
             int slot = pkt.slotIndex();
-            if (slot < 0 || slot >= ControllerOwners.SLOT_COUNT) return;
+            if (slot < 0 || slot >= PlayerLinkApi.slotCount()) return;
 
             ItemStack controller = findController(sp);
             if (controller.isEmpty()) {
@@ -109,7 +108,7 @@ public final class ServerPacketHandlers {
                 return;
             }
 
-            UUID currentOwner = ControllerOwners.get(controller, slot);
+            UUID currentOwner = PlayerLinkApi.readSlotOwner(controller, slot);
             List<WhitelistResponsePacket.Entry> entries = collectWhitelist(server);
 
             PacketDistributor.sendToPlayer(sp, new ControllerWhitelistResponsePacket(
@@ -126,7 +125,7 @@ public final class ServerPacketHandlers {
             MinecraftServer server = sp.getServer();
             if (server == null) return;
             int slot = pkt.slotIndex();
-            if (slot < 0 || slot >= ControllerOwners.SLOT_COUNT) return;
+            if (slot < 0 || slot >= PlayerLinkApi.slotCount()) return;
 
             ItemStack controller = findController(sp);
             if (controller.isEmpty()) return;
@@ -134,9 +133,9 @@ public final class ServerPacketHandlers {
             Optional<UUID> newOwner = pkt.newOwner();
             if (newOwner.isPresent()) {
                 if (!validateOwner(server, newOwner.get())) return;
-                ControllerOwners.set(controller, slot, newOwner.get());
+                PlayerLinkApi.writeSlotOwner(controller, slot, newOwner.get());
             } else {
-                ControllerOwners.set(controller, slot, null);
+                PlayerLinkApi.writeSlotOwner(controller, slot, null);
             }
 
             PlayerLinkMod.LOGGER.info(
@@ -156,8 +155,8 @@ public final class ServerPacketHandlers {
             if (!(ctx.player() instanceof ServerPlayer sp)) return;
             ItemStack controller = findController(sp);
             if (controller.isEmpty()) return;
-            for (int i = 0; i < ControllerOwners.SLOT_COUNT; i++) {
-                ControllerOwners.set(controller, i, null);
+            for (int i = 0; i < PlayerLinkApi.slotCount(); i++) {
+                PlayerLinkApi.writeSlotOwner(controller, i, null);
             }
             PlayerLinkMod.LOGGER.info("[PlayerLink] {} cleared all controller slot owners",
                     sp.getName().getString());

@@ -2,7 +2,7 @@ package com.playerlink.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.playerlink.api.IOwnedLink;
+import com.playerlink.api.PlayerLinkApi;
 import com.playerlink.util.SlotMath;
 import com.simibubi.create.content.redstone.link.RedstoneLinkBlock;
 import com.simibubi.create.content.redstone.link.RedstoneLinkBlockEntity;
@@ -13,13 +13,19 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.state.BlockState;
 import org.joml.Matrix4f;
+import org.joml.Quaternionf;
 
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.UUID;
 
 /**
  * Renders the owner's player face inside the GUI "face slot" on the block, and
  * draws a hover highlight outline when the player is looking at the slot
  * (matching Create's value-box hover look).
+ *
+ * <p>Hot path — this is invoked once per visible link per frame. All per-frame
+ * allocations have been hoisted into {@code static final} fields below.
  */
 public final class LinkFaceRenderer {
 
@@ -28,27 +34,27 @@ public final class LinkFaceRenderer {
 
     private LinkFaceRenderer() {}
 
-    private static long playerlink$lastDiagLog = 0L;
+    /**
+     * Pre-baked rotation quaternions, one per facing. Computed once at
+     * class-load — avoids allocating a {@link Quaternionf} every frame
+     * for every visible link.
+     */
+    private static final Map<Direction, Quaternionf> ROT = new EnumMap<>(Direction.class);
+    static {
+        ROT.put(Direction.UP,    new Quaternionf().rotateX((float) -Math.PI / 2f));
+        ROT.put(Direction.DOWN,  new Quaternionf().rotateX((float)  Math.PI / 2f));
+        ROT.put(Direction.NORTH, new Quaternionf().rotateY((float)  Math.PI));
+        ROT.put(Direction.SOUTH, new Quaternionf());                     // identity
+        ROT.put(Direction.WEST,  new Quaternionf().rotateY((float) -Math.PI / 2f));
+        ROT.put(Direction.EAST,  new Quaternionf().rotateY((float)  Math.PI / 2f));
+    }
 
     public static void render(RedstoneLinkBlockEntity be,
                               PoseStack pose,
                               MultiBufferSource buffer,
                               int light,
                               int overlay) {
-        // ── Diagnostic: log once every 5 seconds so we can see if this method
-        //    is being called at all. Look for "[PlayerLink][face-render]" in latest.log
-        long now = System.currentTimeMillis();
-        if (now - playerlink$lastDiagLog > 5000L) {
-            playerlink$lastDiagLog = now;
-            com.playerlink.PlayerLinkMod.LOGGER.info(
-                "[PlayerLink][face-render] called for {}  (owned={}, owner={})",
-                be.getBlockPos(),
-                be instanceof IOwnedLink,
-                (be instanceof IOwnedLink io) ? io.playerlink$getOwner() : "n/a");
-        }
-
-        if (!(be instanceof IOwnedLink owned)) return;
-        UUID owner = owned.playerlink$getOwner();
+        UUID owner = PlayerLinkApi.readBlockOwner(be);
         if (owner == null) return;
 
         ResourceLocation skin = SkinCache.get(owner, null);
@@ -98,13 +104,10 @@ public final class LinkFaceRenderer {
         var center = SlotMath.localFaceCenter(facing);
         pose.translate(center.x, center.y, center.z);
 
-        switch (facing) {
-            case UP    -> pose.mulPose(new org.joml.Quaternionf().rotateX((float) -Math.PI / 2f));
-            case DOWN  -> pose.mulPose(new org.joml.Quaternionf().rotateX((float)  Math.PI / 2f));
-            case NORTH -> pose.mulPose(new org.joml.Quaternionf().rotateY((float)  Math.PI));
-            case SOUTH -> { /* default orientation, face points +Z */ }
-            case WEST  -> pose.mulPose(new org.joml.Quaternionf().rotateY((float) -Math.PI / 2f));
-            case EAST  -> pose.mulPose(new org.joml.Quaternionf().rotateY((float)  Math.PI / 2f));
+        Quaternionf q = ROT.get(facing);
+        if (q != null && facing != Direction.SOUTH) {
+            // SOUTH is the identity rotation — no mulPose call needed.
+            pose.mulPose(q);
         }
         // Push a hair forward to avoid z-fighting with the block surface
         pose.translate(0f, 0f, 0.002f);

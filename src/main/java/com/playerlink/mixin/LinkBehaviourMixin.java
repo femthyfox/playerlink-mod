@@ -1,7 +1,6 @@
 package com.playerlink.mixin;
 
-import com.playerlink.api.IFrequencyOwner;
-import com.playerlink.api.IOwnedLink;
+import com.playerlink.api.PlayerLinkApi;
 import com.simibubi.create.content.redstone.link.LinkBehaviour;
 import com.simibubi.create.content.redstone.link.RedstoneLinkNetworkHandler;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
@@ -24,16 +23,15 @@ public abstract class LinkBehaviourMixin {
 
         BlockEntityBehaviour selfBeh = (BlockEntityBehaviour) (Object) this;
         SmartBlockEntity be = selfBeh.blockEntity;
+        UUID owner = PlayerLinkApi.readBlockOwner(be);
 
-        UUID owner = (be instanceof IOwnedLink owned) ? owned.playerlink$getOwner() : null;
-
-        RedstoneLinkNetworkHandler.Frequency origFirst = originalKey.getFirst();
+        RedstoneLinkNetworkHandler.Frequency origFirst  = originalKey.getFirst();
         RedstoneLinkNetworkHandler.Frequency origSecond = originalKey.getSecond();
 
-        RedstoneLinkNetworkHandler.Frequency newFirst = RedstoneLinkNetworkHandler.Frequency.of(origFirst.getStack());
+        RedstoneLinkNetworkHandler.Frequency newFirst  = RedstoneLinkNetworkHandler.Frequency.of(origFirst.getStack());
         RedstoneLinkNetworkHandler.Frequency newSecond = RedstoneLinkNetworkHandler.Frequency.of(origSecond.getStack());
-        if (newFirst instanceof IFrequencyOwner fo) fo.playerlink$setOwner(owner);
-        if (newSecond instanceof IFrequencyOwner fo) fo.playerlink$setOwner(owner);
+        PlayerLinkApi.stampOwner(newFirst,  owner);
+        PlayerLinkApi.stampOwner(newSecond, owner);
 
         cir.setReturnValue(Couple.create(newFirst, newSecond));
     }

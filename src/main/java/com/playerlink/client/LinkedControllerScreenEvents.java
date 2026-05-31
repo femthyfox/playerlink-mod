@@ -2,9 +2,9 @@ package com.playerlink.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.playerlink.PlayerLinkMod;
+import com.playerlink.api.PlayerLinkApi;
 import com.playerlink.network.ClearAllControllerOwnersPacket;
 import com.playerlink.network.RequestControllerWhitelistPacket;
-import com.playerlink.util.ControllerOwners;
 import com.simibubi.create.content.redstone.link.controller.LinkedControllerItem;
 import com.simibubi.create.content.redstone.link.controller.LinkedControllerScreen;
 import net.minecraft.client.Minecraft;
@@ -12,6 +12,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.PlayerFaceRenderer;
 import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.Slot;
@@ -23,6 +24,7 @@ import net.neoforged.neoforge.client.event.ScreenEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 import javax.annotation.Nullable;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -60,12 +62,22 @@ public final class LinkedControllerScreenEvents {
     private static final int SIDEBAR_SPACING = 4; // vertical gap between stacked widgets
 
     // ── Per-render-frame layout cache (recomputed on Init.Post) ────────────
-    private static final int[] faceX = new int[ControllerOwners.SLOT_COUNT];
-    private static int   faceY       = 0;
-    private static boolean layoutValid = false;
+    private static final int[] faceX = new int[PlayerLinkApi.slotCount()];
+    private static int     faceY        = 0;
+    private static boolean layoutValid  = false;
 
     /** Reference to Create's trash widget after relocation — used to detect clicks. */
     @Nullable private static AbstractWidget trashWidgetRef = null;
+
+    /** Last screen we layout-logged for — keeps log spam down on resize/return. */
+    private static WeakReference<Screen> lastLoggedScreen = new WeakReference<>(null);
+
+    // Pre-allocated tooltip components (avoids per-frame allocation while hovering).
+    private static final Component TIP_OWNED = Component.literal("Player Frequency");
+    private static final Component TIP_EMPTY = Component.literal("Click to assign owner");
+
+    /** Returned when the player isn't holding a controller — saves a tag copy. */
+    private static final UUID[] EMPTY_OWNERS = new UUID[PlayerLinkApi.slotCount()];
 
     // ════════════════════════════════════════════════════════════════════
     //                              INIT
@@ -89,7 +101,7 @@ public final class LinkedControllerScreenEvents {
         List<Slot> allSlots = new ArrayList<>(lcs.getMenu().slots);
         allSlots.sort(Comparator.comparingInt(s -> s.y));
 
-        final int FREQ_SLOT_COUNT = ControllerOwners.SLOT_COUNT * 2; // 12
+        final int FREQ_SLOT_COUNT = PlayerLinkApi.slotCount() * 2; // 12
         List<Integer> colXs = new ArrayList<>();
         int freqRowBottomRel = 0; // y of bottom edge of lowest freq slot (relative)
         int countedFreq = 0;
@@ -109,18 +121,18 @@ public final class LinkedControllerScreenEvents {
                 : imageH - 82;
 
         // ─── (2) Compute face row positions ─────────────────────────────────
-        if (colXs.size() >= ControllerOwners.SLOT_COUNT && freqRowBottomRel > 0) {
+        if (colXs.size() >= PlayerLinkApi.slotCount() && freqRowBottomRel > 0) {
             // Align each face with the corresponding freq column.
-            for (int i = 0; i < ControllerOwners.SLOT_COUNT; i++) {
+            for (int i = 0; i < PlayerLinkApi.slotCount(); i++) {
                 faceX[i] = leftPos + colXs.get(i);
             }
             faceY = topPos + freqRowBottomRel + FACE_ROW_GAP;
         } else {
             // Defensive fallback if we couldn't read 6 columns: distribute evenly.
-            int totalW = ControllerOwners.SLOT_COUNT * FACE_SIZE
-                       + (ControllerOwners.SLOT_COUNT - 1) * 2;
+            int totalW = PlayerLinkApi.slotCount() * FACE_SIZE
+                       + (PlayerLinkApi.slotCount() - 1) * 2;
             int startX = leftPos + (imageW - totalW) / 2;
-            for (int i = 0; i < ControllerOwners.SLOT_COUNT; i++) {
+            for (int i = 0; i < PlayerLinkApi.slotCount(); i++) {
                 faceX[i] = startX + i * (FACE_SIZE + 2);
             }
             faceY = topPos + (freqRowBottomRel > 0 ? freqRowBottomRel : 60) + FACE_ROW_GAP;
@@ -163,13 +175,18 @@ public final class LinkedControllerScreenEvents {
             sideY += w.getHeight() + SIDEBAR_SPACING;
         }
 
-        PlayerLinkMod.LOGGER.info(
-            "[PlayerLink] LinkedController layout — leftPos={} topPos={} faceY={} "
-          + "faceX={} cols={} freqRowBottom(rel)={} relocatedWidgets={} trash?={}",
-            leftPos, topPos, faceY,
-            Arrays.toString(faceX), colXs, freqRowBottomRel,
-            bottomStrip.size(),
-            trashWidgetRef == null ? "none" : trashWidgetRef.getClass().getSimpleName());
+        // Log layout ONCE per fresh screen instance — not on every resize
+        // or PlayerSelectScreen-return (which re-fires Init.Post).
+        if (lastLoggedScreen.get() != lcs) {
+            lastLoggedScreen = new WeakReference<>(lcs);
+            PlayerLinkMod.LOGGER.info(
+                "[PlayerLink] LinkedController layout — leftPos={} topPos={} faceY={} "
+              + "faceX={} cols={} freqRowBottom(rel)={} relocatedWidgets={} trash?={}",
+                leftPos, topPos, faceY,
+                Arrays.toString(faceX), colXs, freqRowBottomRel,
+                bottomStrip.size(),
+                trashWidgetRef == null ? "none" : trashWidgetRef.getClass().getSimpleName());
+        }
     }
 
     // ════════════════════════════════════════════════════════════════════
@@ -186,9 +203,15 @@ public final class LinkedControllerScreenEvents {
         GuiGraphics g = event.getGuiGraphics();
         int mouseX = event.getMouseX();
         int mouseY = event.getMouseY();
-        ItemStack controller = findHeldController(mc);
 
-        for (int i = 0; i < ControllerOwners.SLOT_COUNT; i++) {
+        // Hot-path optimization: read controller + all 6 owners exactly once
+        // per frame, instead of doing a deep tag copy per slot.
+        ItemStack controller = findHeldController(mc);
+        UUID[] owners = controller.isEmpty()
+                ? EMPTY_OWNERS
+                : PlayerLinkApi.readAllSlotOwners(controller);
+
+        for (int i = 0; i < PlayerLinkApi.slotCount(); i++) {
             final int x = faceX[i];
             final int y = faceY;
             boolean hover = mouseX >= x && mouseX < x + FACE_SIZE
@@ -201,7 +224,7 @@ public final class LinkedControllerScreenEvents {
             g.fill(x, y, x + FACE_SIZE, y + FACE_SIZE,
                    hover ? 0xFFFFFFC0 : 0xFF8B8B8B);
 
-            UUID owner = controller.isEmpty() ? null : ControllerOwners.get(controller, i);
+            UUID owner = owners[i];
             if (owner != null) {
                 ResourceLocation skin = SkinCache.get(owner, resolveName(owner));
                 RenderSystem.enableBlend();
@@ -217,9 +240,7 @@ public final class LinkedControllerScreenEvents {
             }
 
             if (hover) {
-                Component tip = Component.literal(
-                        owner != null ? "Player Frequency" : "Click to assign owner");
-                g.renderTooltip(mc.font, tip, mouseX, mouseY);
+                g.renderTooltip(mc.font, owner != null ? TIP_OWNED : TIP_EMPTY, mouseX, mouseY);
             }
         }
     }
@@ -240,7 +261,7 @@ public final class LinkedControllerScreenEvents {
         // Face-slot click → open the player-picker for that column. We
         // CANCEL so Create's slot-handling code never sees the click.
         if (my >= faceY && my < faceY + FACE_SIZE) {
-            for (int i = 0; i < ControllerOwners.SLOT_COUNT; i++) {
+            for (int i = 0; i < PlayerLinkApi.slotCount(); i++) {
                 int x = faceX[i];
                 if (mx >= x && mx < x + FACE_SIZE) {
                     PacketDistributor.sendToServer(new RequestControllerWhitelistPacket(i));

@@ -1,7 +1,6 @@
 package com.playerlink.mixin;
 
-import com.playerlink.api.IFrequencyOwner;
-import com.playerlink.util.ControllerOwnerContext;
+import com.playerlink.api.PlayerLinkApi;
 import com.simibubi.create.content.redstone.link.RedstoneLinkNetworkHandler;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
@@ -12,25 +11,25 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.UUID;
 
 /**
- * Mixin into Frequency.of(ItemStack) to read the ThreadLocal slot owner
- * set by LinkedControllerServerHandlerMixin and tag the returned
- * Frequency object.
+ * Mixin into {@code Frequency.of(ItemStack)} that, on RETURN, reads the
+ * thread-local transmit owner set via
+ * {@link PlayerLinkApi#beginTransmit(UUID)} and stamps the produced
+ * Frequency with it.
  *
- * If ControllerOwnerContext.get() returns null, the frequency stays
- * "no owner" — which is what we want for block-link creation paths
- * that don't set the context.
+ * <p>This is the central interception point — any code that wraps a Create
+ * emit call with {@code beginTransmit}/{@code endTransmit} automatically
+ * gets owner-isolated frequencies WITHOUT having to touch the Frequency
+ * object itself.
  */
-@Mixin(targets = "com.simibubi.create.content.redstone.link.RedstoneLinkNetworkHandler$Frequency", remap = false)
+@Mixin(targets = "com.simibubi.create.content.redstone.link.RedstoneLinkNetworkHandler$Frequency",
+       remap = false)
 public abstract class FrequencyOfMixin {
 
     @Inject(method = "of", at = @At("RETURN"), cancellable = false, remap = false, require = 0)
     private static void playerlink$tagFromContext(ItemStack stack,
                                                   CallbackInfoReturnable<RedstoneLinkNetworkHandler.Frequency> cir) {
-        UUID owner = ControllerOwnerContext.get();
+        UUID owner = PlayerLinkApi.currentTransmitOwner();
         if (owner == null) return;
-        Object result = cir.getReturnValue();
-        if (result instanceof IFrequencyOwner fo) {
-            fo.playerlink$setOwner(owner);
-        }
+        PlayerLinkApi.stampOwner(cir.getReturnValue(), owner);
     }
 }

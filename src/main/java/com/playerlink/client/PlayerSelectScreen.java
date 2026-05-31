@@ -280,7 +280,7 @@ public class PlayerSelectScreen extends Screen {
         }
 
         // ── Hint text between grid and buttons
-        Component hint = Component.literal("Click a player to select  ·  Click again to confirm");
+        Component hint = Component.literal("Click a player to select");
         int hintX = panelX + (panelW - font.width(hint)) / 2;
         int hintY = panelY + panelH - 40;
         g.drawString(font, hint, hintX, hintY, 0xFFFFFFFF, true);

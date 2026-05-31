@@ -139,27 +139,16 @@ public final class ServerPacketHandlers {
                 ControllerOwners.set(controller, slot, null);
             }
 
-            // Re-open the controller GUI so the player isn't kicked out to world.
-            playerlink$reopenController(sp, controller);
+            PlayerLinkMod.LOGGER.info(
+                "[PlayerLink] {} set controller slot {} owner to {}",
+                sp.getName().getString(), slot, newOwner.orElse(null));
+            // NOTE: do NOT try to reopen the controller GUI server-side.
+            // The container menu was never closed (PlayerSelectScreen is a
+            // plain Screen, not an AbstractContainerScreen), and the client
+            // restores the original LinkedControllerScreen via setScreen()
+            // in PlayerSelectScreen#onClose(). Any server-side item.use()
+            // call here would only toggle the controller's active state.
         });
-    }
-
-    /**
-     * Re-open Create's LinkedController GUI for the player by calling the
-     * item's use() method (which is what right-clicking does). Try mainhand
-     * first, fallback to offhand. Wrapped in try/catch so a Create API change
-     * can't crash the server here.
-     */
-    private static void playerlink$reopenController(ServerPlayer sp, ItemStack controller) {
-        try {
-            net.minecraft.world.InteractionHand hand =
-                sp.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND) == controller
-                    ? net.minecraft.world.InteractionHand.MAIN_HAND
-                    : net.minecraft.world.InteractionHand.OFF_HAND;
-            controller.getItem().use(sp.level(), sp, hand);
-        } catch (Throwable t) {
-            PlayerLinkMod.LOGGER.warn("[PlayerLink] reopenController failed", t);
-        }
     }
 
     public static void handleClearAllControllerOwners(final ClearAllControllerOwnersPacket pkt, final IPayloadContext ctx) {

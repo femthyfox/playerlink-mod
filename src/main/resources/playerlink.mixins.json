@@ -12,8 +12,7 @@
     "ValueBoxTransformMixin"
   ],
   "client": [
-    "RedstoneLinkRendererMixin",
-    "LinkedControllerScreenMixin"
+    "RedstoneLinkRendererMixin"
   ],
   "injectors": { "defaultRequire": 1 }
 }

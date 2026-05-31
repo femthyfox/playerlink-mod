@@ -120,6 +120,8 @@ public final class ClientEvents {
 
         PlayerLinkMod.LOGGER.info("[PlayerLink] Face slot clicked at {}, opening GUI", event.getPos());
         PacketDistributor.sendToServer(new RequestWhitelistPacket(event.getPos()));
+        event.setUseBlock(net.neoforged.neoforge.common.util.TriState.FALSE);
+        event.setUseItem(net.neoforged.neoforge.common.util.TriState.FALSE);
         event.setCancellationResult(InteractionResult.SUCCESS);
         event.setCanceled(true);
     }

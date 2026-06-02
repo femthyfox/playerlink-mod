@@ -2,10 +2,12 @@ package com.playerlink.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.playerlink.PlayerLinkMod;
+import com.playerlink.network.RequestTypewriterWhitelistPacket;
 import com.playerlink.network.RequestWhitelistPacket;
 import com.playerlink.util.SlotMath;
 import com.simibubi.create.content.redstone.link.RedstoneLinkBlock;
 import com.simibubi.create.content.redstone.link.RedstoneLinkBlockEntity;
+
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -120,6 +122,27 @@ public final class ClientEvents {
 
         PlayerLinkMod.LOGGER.info("[PlayerLink] Face slot clicked at {}, opening GUI", event.getPos());
         PacketDistributor.sendToServer(new RequestWhitelistPacket(event.getPos()));
+        event.setUseBlock(net.neoforged.neoforge.common.util.TriState.FALSE);
+        event.setUseItem(net.neoforged.neoforge.common.util.TriState.FALSE);
+        event.setCancellationResult(InteractionResult.SUCCESS);
+        event.setCanceled(true);
+    }
+
+    /**
+     * Shift + right-click on a Linked Typewriter opens the owner-select GUI.
+     * Normal (non-shift) right-click is left to Simulated's own handler so
+     * players can still use the typewriter normally.
+     */
+    @SubscribeEvent(priority = EventPriority.HIGH)
+    public static void onUseTypewriter(final PlayerInteractEvent.RightClickBlock event) {
+        if (!event.getLevel().isClientSide()) return;
+        if (event.getHand() != InteractionHand.MAIN_HAND) return;
+        if (!event.getEntity().isShiftKeyDown()) return;
+
+        BlockEntity be = event.getLevel().getBlockEntity(event.getPos());
+        if (!com.playerlink.compat.TypewriterCompat.isTypewriter(be)) return;
+
+        PacketDistributor.sendToServer(new RequestTypewriterWhitelistPacket(event.getPos()));
         event.setUseBlock(net.neoforged.neoforge.common.util.TriState.FALSE);
         event.setUseItem(net.neoforged.neoforge.common.util.TriState.FALSE);
         event.setCancellationResult(InteractionResult.SUCCESS);

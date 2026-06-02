@@ -15,13 +15,7 @@ public class PlayerLinkMod {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public PlayerLinkMod(IEventBus modBus) {
-        LOGGER.info("[PlayerLink] === BUILD-MARKER-2026-05-25-V2 === Constructor starting");
-
-        com.playerlink.util.Probe3.run();
-
         modBus.addListener(this::commonSetup);
-
-        LOGGER.info("[PlayerLink] Constructor: registered commonSetup listener");
 
         NeoForge.EVENT_BUS.register(com.playerlink.server.ServerEvents.class);
 
@@ -30,8 +24,6 @@ public class PlayerLinkMod {
             NeoForge.EVENT_BUS.register(com.playerlink.client.ClientEvents.class);
             modBus.addListener(com.playerlink.client.ClientEvents::registerKeyMappings);
         }
-
-        LOGGER.info("[PlayerLink] === Constructor finished ===");
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {

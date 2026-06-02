@@ -4,7 +4,7 @@ plugins {
     id 'net.neoforged.moddev' version '1.0.21'
 }
 
-version = '1.0.6'
+version = mod_version
 group = mod_group_id
 
 base {
@@ -15,22 +15,18 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 repositories {
     mavenLocal()
-maven {
-    // create mod link
+    maven {
         name = "Create Mod Maven"
         url = "https://maven.createmod.net/"
     }
-    // Create
     maven {
         name = 'tterrag maven'
         url = 'https://maven.tterrag.com/'
     }
-    // Registrate / Flywheel / Create transitive
     maven {
         name = 'BlameJared'
         url = 'https://maven.blamejared.com'
     }
-    // JEI / etc (often needed by Create at runtime)
     maven {
         name = 'Jared'
         url = 'https://maven.jamieswhiteshirt.com/libs-release/'
@@ -39,18 +35,13 @@ maven {
         name = 'ModMaven'
         url = 'https://modmaven.dev/'
     }
+    maven {
+        name = 'IThundxr Snapshots'
+        url = 'https://maven.ithundxr.dev/snapshots'
+    }
     mavenCentral()
- 
-maven {
-        name = "CreateMod Maven"
-        url = "https://maven.createmod.net/"
-    }
-
-maven { 
-        url = "https://maven.ithundxr.dev/snapshots" 
-    }
 }
-    
+
 neoForge {
     version = neo_version
 
@@ -90,17 +81,15 @@ neoForge {
 
 dependencies {
     // Create Mod Core
-    implementation("com.simibubi.create:create-1.21.1:6.0.10-223")
+    implementation("com.simibubi.create:create-1.21.1:${create_version}")
 
-    // ==========================================
-    // GUARANTEED LOCAL FIX FOR PONDER
-    // ==========================================
+    // Ponder (bundled locally — resolves transitive Ponder version conflict)
     implementation files("libs/Ponder-NeoForge-1.21.1-1.0.46.jar")
 
-    // Flywheel Mod Backend (Already fixed locally)
+    // Flywheel API (compile-only — provided at runtime by Create)
     compileOnly files("libs/flywheel-neoforge-api-1.21.1-1.0.6.jar")
 
-    // Registrate Component
+    // Registrate (required by Create)
     implementation("com.tterrag.registrate:Registrate:${registrate_version}")
 }
 

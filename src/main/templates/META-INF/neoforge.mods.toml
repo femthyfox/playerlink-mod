@@ -1,17 +1,18 @@
 modLoader = "javafml"
 loaderVersion = "${loader_version_range}"
 license = "MIT"
-issueTrackerURL = "https://example.com/issues"
 
 [[mods]]
 modId = "${mod_id}"
-version = "1.0.7"
-displayName = "Player links [NeoForge 1.21.1]"
-authors = "acosmicnova"
+version = "${mod_version}"
+displayName = "Player Links [NeoForge 1.21.1]"
+authors = "${mod_authors}"
 description = '''${mod_description}'''
 
 [[mixins]]
 config = "playerlink.mixins.json"
+
+# ── Required dependencies ────────────────────────────────────────────────────
 
 [[dependencies.${mod_id}]]
 modId = "neoforge"
@@ -31,5 +32,16 @@ side = "BOTH"
 modId = "create"
 type = "required"
 versionRange = "${create_version_range}"
+ordering = "AFTER"
+side = "BOTH"
+
+# ── Optional dependencies ────────────────────────────────────────────────────
+# Linked Typewriter support requires Create Simulated (Create Aeronautics).
+# The mod works fine without it — typewriter features are simply skipped.
+
+[[dependencies.${mod_id}]]
+modId = "simulated"
+type = "optional"
+versionRange = "[1.0,)"
 ordering = "AFTER"
 side = "BOTH"

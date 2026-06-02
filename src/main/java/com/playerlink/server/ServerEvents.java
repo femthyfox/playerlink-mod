@@ -6,6 +6,7 @@ import com.playerlink.api.IOwnedLink;
 import com.playerlink.util.SlotMath;
 import com.simibubi.create.content.redstone.link.RedstoneLinkBlock;
 import com.simibubi.create.content.redstone.link.RedstoneLinkBlockEntity;
+
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
@@ -120,6 +121,26 @@ public final class ServerEvents {
         Direction facing = state.getValue(RedstoneLinkBlock.FACING);
         Vec3 hitVec = event.getHitVec().getLocation();
         if (!SlotMath.isFaceSlotHit(event.getPos(), facing, hitVec)) return;
+
+        event.setUseBlock(TriState.FALSE);
+        event.setUseItem(TriState.FALSE);
+        event.setCancellationResult(InteractionResult.SUCCESS);
+        event.setCanceled(true);
+    }
+
+    /**
+     * Server-side mirror of ClientEvents#onUseTypewriter.
+     * Cancels the vanilla block-use so Simulated's shift-right-click logic
+     * doesn't also fire when we intercept it for the owner GUI.
+     */
+    @SubscribeEvent(priority = EventPriority.HIGH)
+    public static void onUseTypewriterServer(final PlayerInteractEvent.RightClickBlock event) {
+        if (event.getLevel().isClientSide()) return;
+        if (event.getHand() != InteractionHand.MAIN_HAND) return;
+        if (!event.getEntity().isShiftKeyDown()) return;
+
+        BlockEntity be = event.getLevel().getBlockEntity(event.getPos());
+        if (!com.playerlink.compat.TypewriterCompat.isTypewriter(be)) return;
 
         event.setUseBlock(TriState.FALSE);
         event.setUseItem(TriState.FALSE);

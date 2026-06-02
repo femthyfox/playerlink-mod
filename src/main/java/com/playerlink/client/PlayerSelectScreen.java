@@ -3,6 +3,7 @@ package com.playerlink.client;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.playerlink.network.SetControllerSlotOwnerPacket;
 import com.playerlink.network.SetOwnerPacket;
+import com.playerlink.network.SetTypewriterOwnerPacket;
 import com.playerlink.network.WhitelistResponsePacket;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
@@ -23,10 +24,11 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Player-owner selection screen. Used in two modes:
- *   • block-link mode  — sends SetOwnerPacket on assign
- *   • controller mode  — sends SetControllerSlotOwnerPacket on assign,
- *                        and returns to the Linked Controller screen on close.
+ * Player-owner selection screen. Used in three modes:
+ *   • block-link mode     — sends SetOwnerPacket on assign
+ *   • controller mode     — sends SetControllerSlotOwnerPacket on assign,
+ *                           and returns to the Linked Controller screen on close.
+ *   • typewriter mode     — sends SetTypewriterOwnerPacket on assign
  */
 public class PlayerSelectScreen extends Screen {
 
@@ -69,7 +71,8 @@ public class PlayerSelectScreen extends Screen {
     private static final int PANEL_MARGIN = 24;
 
     private final BlockPos blockPos;
-    private final int controllerSlot;            // -1 when in block-link mode
+    private final int controllerSlot;            // -1 when in block-link or typewriter mode
+    private final boolean typewriterMode;        // true when editing a Linked Typewriter
     @Nullable private final Screen returnScreen; // restored on close (controller mode)
     @Nullable private final UUID currentOwner;
     private final List<WhitelistResponsePacket.Entry> allEntries;
@@ -89,7 +92,7 @@ public class PlayerSelectScreen extends Screen {
     public static PlayerSelectScreen forBlock(BlockPos pos,
                                               @Nullable UUID currentOwner,
                                               List<WhitelistResponsePacket.Entry> entries) {
-        return new PlayerSelectScreen(pos, -1, null, currentOwner, entries);
+        return new PlayerSelectScreen(pos, -1, false, null, currentOwner, entries);
     }
 
     /** Factory: open in controller-slot mode. */
@@ -97,24 +100,35 @@ public class PlayerSelectScreen extends Screen {
                                                        @Nullable UUID currentOwner,
                                                        List<WhitelistResponsePacket.Entry> entries,
                                                        @Nullable Screen returnScreen) {
-        return new PlayerSelectScreen(BlockPos.ZERO, slotIndex, returnScreen, currentOwner, entries);
+        return new PlayerSelectScreen(BlockPos.ZERO, slotIndex, false, returnScreen, currentOwner, entries);
+    }
+
+    /** Factory: open in typewriter mode. */
+    public static PlayerSelectScreen forTypewriter(BlockPos pos,
+                                                   @Nullable UUID currentOwner,
+                                                   List<WhitelistResponsePacket.Entry> entries) {
+        return new PlayerSelectScreen(pos, -1, true, null, currentOwner, entries);
     }
 
     /** Back-compat single-arg constructor. */
     public PlayerSelectScreen(BlockPos pos, @Nullable UUID currentOwner, List<WhitelistResponsePacket.Entry> entries) {
-        this(pos, -1, null, currentOwner, entries);
+        this(pos, -1, false, null, currentOwner, entries);
     }
 
     private PlayerSelectScreen(BlockPos pos,
                                int controllerSlot,
+                               boolean typewriterMode,
                                @Nullable Screen returnScreen,
                                @Nullable UUID currentOwner,
                                List<WhitelistResponsePacket.Entry> entries) {
         super(Component.translatable(controllerSlot >= 0
                 ? "playerlink.gui.select_owner.controller_title"
-                : "playerlink.gui.select_owner.title"));
+                : typewriterMode
+                    ? "playerlink.gui.select_owner.typewriter_title"
+                    : "playerlink.gui.select_owner.title"));
         this.blockPos = pos;
         this.controllerSlot = controllerSlot;
+        this.typewriterMode = typewriterMode;
         this.returnScreen = returnScreen;
         this.currentOwner = currentOwner;
         this.allEntries = entries;
@@ -167,6 +181,8 @@ public class PlayerSelectScreen extends Screen {
                 b -> {
                     if (controllerSlot >= 0) {
                         PacketDistributor.sendToServer(new SetControllerSlotOwnerPacket(controllerSlot, Optional.empty()));
+                    } else if (typewriterMode) {
+                        PacketDistributor.sendToServer(new SetTypewriterOwnerPacket(blockPos, Optional.empty()));
                     } else {
                         PacketDistributor.sendToServer(new SetOwnerPacket(blockPos, Optional.empty()));
                     }
@@ -194,6 +210,8 @@ public class PlayerSelectScreen extends Screen {
         if (selectedUuid == null) return;
         if (controllerSlot >= 0) {
             PacketDistributor.sendToServer(new SetControllerSlotOwnerPacket(controllerSlot, Optional.of(selectedUuid)));
+        } else if (typewriterMode) {
+            PacketDistributor.sendToServer(new SetTypewriterOwnerPacket(blockPos, Optional.of(selectedUuid)));
         } else {
             PacketDistributor.sendToServer(new SetOwnerPacket(blockPos, Optional.of(selectedUuid)));
         }

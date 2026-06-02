@@ -20,8 +20,6 @@ public final class LinkFaceRenderer {
 
     public static volatile BlockPos HOVERED_FACE_SLOT_POS = null;
 
-    private static long playerlink$lastDiagLog = 0L;
-
     private LinkFaceRenderer() {}
 
     public static void render(RedstoneLinkBlockEntity be,
@@ -29,16 +27,6 @@ public final class LinkFaceRenderer {
                               MultiBufferSource buffer,
                               int light,
                               int overlay) {
-        long now = System.currentTimeMillis();
-        if (now - playerlink$lastDiagLog > 5000L) {
-            playerlink$lastDiagLog = now;
-            com.playerlink.PlayerLinkMod.LOGGER.info(
-                "[PlayerLink][face-render] called for {}  (owned={}, owner={})",
-                be.getBlockPos(),
-                be instanceof IOwnedLink,
-                (be instanceof IOwnedLink io) ? io.playerlink$getOwner() : "n/a");
-        }
-
         if (!(be instanceof IOwnedLink owned)) return;
         UUID owner = owned.playerlink$getOwner();
         if (owner == null) return;

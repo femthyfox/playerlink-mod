@@ -1,13 +1,17 @@
 package com.playerlink.mixin;
 
 /**
- * Intentionally empty placeholder.
+ * The Typewriter mixin is implemented via TypewriterCompat (reflection-based)
+ * so PlayerLink compiles without the Simulated JAR. See TypewriterCompat.java.
  *
- * LinkedTypewriter support is implemented via reflection in
- * com.playerlink.server.TypewriterCompat so that the mod compiles
- * without the Simulated JAR present in the build environment.
- * The mixin is kept in the mixins list with require=0 so it is
- * skipped silently when Simulated is absent at runtime.
+ * At runtime, TypewriterCompatMixin handles:
+ *  - injecting a per-key owner map field onto LinkedTypewriterBlockEntity
+ *  - hooking write/read for NBT persistence
+ *  - hooking activateKey to tag Frequency objects before network submission
+ *
+ * This file is kept as a placeholder; the real injection work is in
+ * TypewriterCompatMixin which uses string-based class names so it compiles
+ * without Simulated on the classpath.
  */
 public abstract class LinkedTypewriterBlockEntityMixin {
 }

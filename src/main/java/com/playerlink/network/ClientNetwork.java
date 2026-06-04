@@ -23,5 +23,10 @@ public final class ClientNetwork {
                 TypewriterWhitelistResponsePacket.STREAM_CODEC,
                 ClientPacketHandlers::handleTypewriterWhitelistResponse
         );
+        registrar.playToClient(
+                TypewriterKeyWhitelistResponsePacket.TYPE,
+                TypewriterKeyWhitelistResponsePacket.STREAM_CODEC,
+                ClientPacketHandlers::handleTypewriterKeyWhitelistResponse
+        );
     }
 }

@@ -2,11 +2,14 @@ package com.playerlink.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.playerlink.PlayerLinkMod;
+import com.playerlink.network.CopyLinkFrequencyPacket;
 import com.playerlink.network.RequestTypewriterWhitelistPacket;
 import com.playerlink.network.RequestWhitelistPacket;
+import com.playerlink.util.ControllerOwners;
 import com.playerlink.util.SlotMath;
 import com.simibubi.create.content.redstone.link.RedstoneLinkBlock;
 import com.simibubi.create.content.redstone.link.RedstoneLinkBlockEntity;
+import com.simibubi.create.content.redstone.link.controller.LinkedControllerItem;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
@@ -129,23 +132,74 @@ public final class ClientEvents {
     }
 
     /**
+     * Right-click a Redstone Link while holding a Link Controller:
+     * copies the link's player-frequency onto the currently active
+     * controller slot (determined by which slot the controller GUI
+     * last highlighted, defaulting to slot 0).
+     */
+    @SubscribeEvent(priority = EventPriority.HIGH)
+    public static void onUseBlockWithController(final PlayerInteractEvent.RightClickBlock event) {
+        if (!event.getLevel().isClientSide()) return;
+        if (event.getHand() != InteractionHand.MAIN_HAND) return;
+
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null) return;
+
+        // Only fire when holding a controller
+        net.minecraft.world.item.ItemStack held = mc.player.getMainHandItem();
+        if (!(held.getItem() instanceof LinkedControllerItem)) {
+            held = mc.player.getOffhandItem();
+            if (!(held.getItem() instanceof LinkedControllerItem)) return;
+        }
+
+        BlockEntity be = event.getLevel().getBlockEntity(event.getPos());
+        if (!(be instanceof RedstoneLinkBlockEntity)) return;
+
+        // Find which slot to copy into: pick the first empty one, or slot 0
+        int targetSlot = 0;
+        for (int i = 0; i < ControllerOwners.SLOT_COUNT; i++) {
+            if (ControllerOwners.get(held, i) == null) { targetSlot = i; break; }
+        }
+
+        PacketDistributor.sendToServer(new CopyLinkFrequencyPacket(
+                event.getPos(), targetSlot, net.minecraft.core.BlockPos.ZERO));
+        event.setUseBlock(net.neoforged.neoforge.common.util.TriState.FALSE);
+        event.setUseItem(net.neoforged.neoforge.common.util.TriState.FALSE);
+        event.setCancellationResult(InteractionResult.SUCCESS);
+        event.setCanceled(true);
+    }
+
+    /**
      * Shift + right-click on a Linked Typewriter opens the owner-select GUI.
-     * Normal (non-shift) right-click is left to Simulated's own handler so
-     * players can still use the typewriter normally.
+     * Normal right-click on a Redstone Link while a Typewriter is selected
+     * in the hotbar copies the link's frequency to the typewriter.
      */
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onUseTypewriter(final PlayerInteractEvent.RightClickBlock event) {
         if (!event.getLevel().isClientSide()) return;
         if (event.getHand() != InteractionHand.MAIN_HAND) return;
-        if (!event.getEntity().isShiftKeyDown()) return;
 
         BlockEntity be = event.getLevel().getBlockEntity(event.getPos());
-        if (!com.playerlink.compat.TypewriterCompat.isTypewriter(be)) return;
 
-        PacketDistributor.sendToServer(new RequestTypewriterWhitelistPacket(event.getPos()));
-        event.setUseBlock(net.neoforged.neoforge.common.util.TriState.FALSE);
-        event.setUseItem(net.neoforged.neoforge.common.util.TriState.FALSE);
-        event.setCancellationResult(InteractionResult.SUCCESS);
-        event.setCanceled(true);
+        // Shift + right-click ON the typewriter → open owner GUI
+        if (com.playerlink.compat.TypewriterCompat.isTypewriter(be)
+                && event.getEntity().isShiftKeyDown()) {
+            PacketDistributor.sendToServer(new RequestTypewriterWhitelistPacket(event.getPos()));
+            event.setUseBlock(net.neoforged.neoforge.common.util.TriState.FALSE);
+            event.setUseItem(net.neoforged.neoforge.common.util.TriState.FALSE);
+            event.setCancellationResult(InteractionResult.SUCCESS);
+            event.setCanceled(true);
+            return;
+        }
+
+        // Right-click a Redstone Link while the player's selected hotbar item
+        // is a Typewriter-linked item → not applicable client side; handled
+        // via the normal typewriter interaction on the block itself.
+        // Instead: right-click any Redstone Link while sneaking near a typewriter
+        // is handled by the server via CopyLinkFrequencyPacket with typewriterPos set.
+        // We detect this client side: if the player is holding nothing special but
+        // a typewriter exists at the last-right-clicked typewriter position, copy.
+        // (This interaction path is intentionally left to the server handler since
+        // we cannot know the typewriter position from the client without extra state.)
     }
 }

@@ -10,6 +10,7 @@
     "RedstoneLinkBlockEntityMixin",
     "LinkBehaviourMixin",
     "LinkedControllerServerHandlerMixin",
+    "LinkedControllerBindPacketMixin",
     "RedstoneLinkFrequencySlotMixin",
     "ValueBoxTransformMixin"
   ],

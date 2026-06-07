@@ -1,0 +1,146 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+    id 'net.neoforged.moddev' version '1.0.21'
+}
+
+version = mod_version
+group = mod_group_id
+
+base {
+    archivesName = 'PlayerLink-NeoForge-1.21.1'
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+repositories {
+    mavenLocal()
+maven {
+    // create mod link
+        name = "Create Mod Maven"
+        url = "https://maven.createmod.net/"
+    }
+    // Create
+    maven {
+        name = 'tterrag maven'
+        url = 'https://maven.tterrag.com/'
+    }
+    // Registrate / Flywheel / Create transitive
+    maven {
+        name = 'BlameJared'
+        url = 'https://maven.blamejared.com'
+    }
+    // JEI / etc (often needed by Create at runtime)
+    maven {
+        name = 'Jared'
+        url = 'https://maven.jamieswhiteshirt.com/libs-release/'
+    }
+    maven {
+        name = 'ModMaven'
+        url = 'https://modmaven.dev/'
+    }
+    mavenCentral()
+ 
+maven {
+        name = "CreateMod Maven"
+        url = "https://maven.createmod.net/"
+    }
+
+maven { 
+        url = "https://maven.ithundxr.dev/snapshots" 
+    }
+}
+    
+neoForge {
+    version = neo_version
+
+    parchment {
+        minecraftVersion = parchment_minecraft_version
+        mappingsVersion = parchment_mappings_version
+    }
+
+    runs {
+        client {
+            client()
+            systemProperty 'forge.enabledGameTestNamespaces', mod_id
+        }
+        server {
+            server()
+            programArgument '--nogui'
+            systemProperty 'forge.enabledGameTestNamespaces', mod_id
+        }
+        data {
+            data()
+            programArguments.addAll '--mod', mod_id, '--all',
+                    '--output', file('src/generated/resources/').getAbsolutePath(),
+                    '--existing', file('src/main/resources/').getAbsolutePath()
+        }
+        configureEach {
+            systemProperty 'forge.logging.markers', 'REGISTRIES'
+            logLevel = org.slf4j.event.Level.DEBUG
+        }
+    }
+
+    mods {
+        "${mod_id}" {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+dependencies {
+    // Create Mod Core
+    implementation("com.simibubi.create:create-1.21.1:6.0.10-223")
+
+    // ==========================================
+    // GUARANTEED LOCAL FIX FOR PONDER
+    // ==========================================
+    implementation files("libs/Ponder-NeoForge-1.21.1-1.0.46.jar")
+
+    // Flywheel Mod Backend (Already fixed locally)
+    compileOnly files("libs/flywheel-neoforge-api-1.21.1-1.0.6.jar")
+
+    // Registrate Component
+    implementation("com.tterrag.registrate:Registrate:${registrate_version}")
+}
+
+// Token-replace mods.toml at build time
+var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
+    var replaceProperties = [
+            minecraft_version      : minecraft_version,
+            minecraft_version_range: minecraft_version_range,
+            neo_version            : neo_version,
+            neo_version_range      : neo_version_range,
+            loader_version_range   : loader_version_range,
+            mod_id                 : mod_id,
+            mod_name               : mod_name,
+            mod_authors            : mod_authors,
+            mod_description        : mod_description,
+            mod_version            : mod_version,
+            create_version_range   : create_version_range
+    ]
+    inputs.properties replaceProperties
+    expand replaceProperties
+    from "src/main/templates"
+    into "build/generated/sources/modMetadata"
+}
+
+sourceSets.main.resources.srcDir generateModMetadata
+neoForge.ideSyncTask generateModMetadata
+
+publishing {
+    publications {
+        register('mavenJava', MavenPublication) {
+            from components.java
+        }
+    }
+    repositories {
+        maven {
+            url "file://${project.projectDir}/repo"
+        }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}

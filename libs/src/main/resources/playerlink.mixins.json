@@ -1,0 +1,22 @@
+{
+  "required": true,
+  "package": "com.playerlink.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "playerlink.refmap.json",
+  "minVersion": "0.8",
+  "mixins": [
+    "FrequencyMixin",
+    "FrequencyOfMixin",
+    "RedstoneLinkBlockEntityMixin",
+    "LinkBehaviourMixin",
+    "LinkedControllerServerHandlerMixin",
+    "LinkedTypewriterBlockEntityMixin",
+    "LinkedTypewriterServerHandlerMixin",
+    "RedstoneLinkFrequencySlotMixin",
+    "ValueBoxTransformMixin"
+  ],
+  "client": [
+    "RedstoneLinkRendererMixin"
+  ],
+  "injectors": { "defaultRequire": 1 }
+}
